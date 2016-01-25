@@ -7,6 +7,7 @@
 #include <ctrlproto_m.h>
 #include <ecrt.h>
 #include <stdio.h>
+#include <signal.h>
 #include <stdbool.h>
 #include <profile.h>
 #include <drive_function.h>
@@ -17,9 +18,20 @@
 
 enum {ECAT_SLAVE_0};
 
+/* Only here for interrupt signaling */
+bool break_loop = false;
+
+/* Interrupt signal handler */
+void  INThandler(int sig)
+{
+     signal(sig, SIG_IGN);
+     break_loop = true;
+     signal(SIGINT, INThandler);
+}
+
 int main() {
 
-    int target_position = 32000; // ticks
+    int target_position = 1*(1 << BISS_SINGLETURN_RESOLUTION); // ticks
     int acceleration = 2000; // rpm/s
     int deceleration = 2000; // rpm/s
     int velocity = 2000; // rpm
@@ -53,6 +65,7 @@ int main() {
     /* Initialize position profile parameters */
     initialize_position_profile_limits(ECAT_SLAVE_0, slv_handles);
 
+
     /* Just for better printing result */
     printf("\n");
     system("setterm -cursor off");
@@ -61,12 +74,19 @@ int main() {
     actual_position = get_position_actual_ticks(ECAT_SLAVE_0, slv_handles);
     printf("our actual position: %i ticks\n",actual_position);
 
+    /* catch interrupt signal */
+    signal(SIGINT, INThandler);
+
     /* Moving four times one rotation back and forth */
-    for (int times = 0; times < 4; times++) {
+//    for (int times = 0; times < 1; times++) {
+    while(1) {
+        if (break_loop)
+            break;
 
         /* Compute a target position */
         relative_target_position = actual_position + direction
                 * target_position;//
+        //        relative_target_position =0;
 
         /* Compute steps needed for the target position */
         steps = init_position_profile_params(relative_target_position,
@@ -74,6 +94,8 @@ int main() {
                 deceleration, ECAT_SLAVE_0, slv_handles);
 
         for (int step = 1; step < steps + 1; step++) {
+            if (break_loop)
+                break;
 
             /* Update the process data (EtherCat packets) sent/received from the node */
             pdo_handle_ecat(&master_setup, slv_handles, TOTAL_NUM_OF_SLAVES);
@@ -94,13 +116,14 @@ int main() {
                 actual_velocity = get_velocity_actual_rpm(ECAT_SLAVE_0,
                         slv_handles);
                 actual_torque
-                        = get_torque_actual_mNm(ECAT_SLAVE_0, slv_handles);
+                = get_torque_actual_mNm(ECAT_SLAVE_0, slv_handles);
 
-                printf("\r    Position: %7.d    Velocity: %6.d    Torque: %6.2f        ", actual_position, actual_velocity, actual_torque);
+                printf("\r    Position: %7.d    Velocity: %6.d    Torque: %6.2f        ", position_ramp,actual_position, actual_velocity, actual_torque);
             }
         }
         direction = direction * -1;
     }
+
 
     printf("\n");
 

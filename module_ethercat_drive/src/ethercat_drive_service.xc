@@ -850,6 +850,7 @@ void ethercat_drive_service(ProfilerConfig &profiler_config,
                        // set_position_csp(profiler_config, target_position, 0, 0, 0, i_position_control);
 
                         actual_position = i_position_control.get_position() * profiler_config.polarity;//cyclic_sync_position_config.velocity_config.polarity;
+//                        printf("actual_position %d\n", actual_position);
                         send_actual_position(actual_position, InOut);
                         //safety_state = read_gpio_digital_input(c_gpio, 1);        // read port 1
                         //value = (port_3_value<<3 | port_2_value<<2 | port_1_value <<1| safety_state );  pack values if more than one port inputs

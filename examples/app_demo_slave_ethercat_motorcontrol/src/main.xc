@@ -1,7 +1,8 @@
 /* INCLUDE BOARD SUPPORT FILES FROM module_board-support */
 #include <COM_ECAT-rev-a.bsp>
 #include <CORE_C22-rev-a.bsp>
-#include <IFM_DC100-rev-b.bsp>
+//#include <IFM_DC100-rev-b.bsp>
+#include <IFM_DC1K-rev-c1.bsp>
 
 /**
  * @file test_ethercat-mode.xc
@@ -30,7 +31,7 @@
 #include <user_config.h>
 
 EthercatPorts ethercat_ports = SOMANET_COM_ETHERCAT_PORTS;
-PwmPorts pwm_ports = SOMANET_IFM_PWM_PORTS;
+//PwmPorts pwm_ports = SOMANET_IFM_PWM_PORTS;
 WatchdogPorts wd_ports = SOMANET_IFM_WATCHDOG_PORTS;
 ADCPorts adc_ports = SOMANET_IFM_ADC_PORTS;
 FetDriverPorts fet_driver_ports = SOMANET_IFM_FET_DRIVER_PORTS;
@@ -42,8 +43,49 @@ port gpio_ports[4] = {  SOMANET_IFM_GPIO_D0,
                         SOMANET_IFM_GPIO_D2,
                         SOMANET_IFM_GPIO_D3 };
 #else
-BISSPorts biss_ports = {QEI_PORT, SOMANET_IFM_GPIO_D0, IFM_TILE_CLOCK_2};
+//BISSPorts biss_ports = {QEI_PORT, SOMANET_IFM_GPIO_D0, IFM_TILE_CLOCK_2};
+PwmPorts pwm_ports = { {PWM_PORT_A_HIGH_SIDE, PWM_PORT_B_HIGH_SIDE, PWM_PORT_C_HIGH_SIDE},
+                       {PWM_PORT_A_LOW_SIDE, PWM_PORT_B_LOW_SIDE, PWM_PORT_C_LOW_SIDE},
+                       null, null,PWM_CLOCK_SRC, PWM_DUMMY_PORT_TRIGGER };
+buffered out port:32 p_ifm_motor_hi_d = PWM_PORT_D_HIGH_SIDE;
+buffered out port:32 p_ifm_motor_lo_d = PWM_PORT_D_LOW_SIDE;
+BISSPorts biss_ports = {QEI_PORT, QEI_PORT_INPUT_MODE_SELECTION, IFM_TILE_CLOCK_2};
 #endif
+
+
+void pwm_output(buffered out port:32 p_pwm, buffered out port:32 p_pwm_inv, int duty, int period, int msec) {
+    const unsigned delay = 5*USEC_FAST;
+    timer t;
+    unsigned int ts;
+    if (msec) {
+        t :> ts;
+        msec = ts + msec*MSEC_FAST;
+    }
+
+    while(1) {
+        p_pwm <: 0xffffffff;
+        delay_ticks(period*duty);
+        p_pwm <: 0x00000000;
+        delay_ticks(delay);
+        p_pwm_inv<: 0xffffffff;
+        delay_ticks(period*(100-duty) + 2*delay);
+        p_pwm_inv <: 0x00000000;
+        delay_ticks(delay);
+
+        if (msec) {
+            t :> ts;
+            if (timeafter(ts, msec))
+                break;
+        }
+    }
+}
+void brake_release(buffered out port:32 p_pwm,  buffered out port:32 p_pwm_inv) {
+    printstr(">>   SOMANET BRAKE RELEASE STARTING...\n");
+    p_pwm <: 0;
+    p_pwm_inv <: 0;
+    pwm_output(p_pwm, p_pwm_inv, 100, 100, 100);
+    pwm_output(p_pwm, p_pwm_inv, 22, 10, 0);
+}
 
 int main(void)
 {
@@ -227,6 +269,9 @@ int main(void)
 
                 /* PWM Service */
                 pwm_triggered_service(pwm_ports, c_adctrig, c_pwm_ctrl);
+
+                /* Brake Release */
+                brake_release(p_ifm_motor_hi_d, p_ifm_motor_lo_d);
 
                 /* Watchdog Service */
                 watchdog_service(wd_ports, i_watchdog);
