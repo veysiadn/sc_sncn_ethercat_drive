@@ -61,6 +61,7 @@ void update_checklist(check_list &check_list_param, int mode,
                         interface HallInterface client ?i_hall,
                         interface QEIInterface client ?i_qei,
                         interface BISSInterface client ?i_biss,
+                        interface AMSInterface client ?i_ams,
                         interface ADCInterface client ?i_adc,
                                 interface TorqueControlInterface client i_torque_control,
                                 interface VelocityControlInterface client i_velocity_control,
@@ -97,6 +98,10 @@ void update_checklist(check_list &check_list_param, int mode,
         if (~skip &&  ~check_list_param._biss_init && !isnull(i_biss)) {
             i_biss.get_biss_position_fast();
             check_list_param._biss_init = INIT;
+        }
+        if (~skip &&  ~check_list_param._ams_init && !isnull(i_ams)) {
+            i_ams.get_ams_velocity();
+            check_list_param._ams_init = INIT;
         }
         break;
     case INIT:

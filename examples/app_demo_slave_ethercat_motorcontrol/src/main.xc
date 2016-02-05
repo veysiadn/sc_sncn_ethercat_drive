@@ -1,7 +1,9 @@
 /* INCLUDE BOARD SUPPORT FILES FROM module_board-support */
 #include <COM_ECAT-rev-a.bsp>
 #include <CORE_C22-rev-a.bsp>
-#include <IFM_DC100-rev-b.bsp>
+//#include <IFM_DC100-rev-b.bsp>
+//#include <IFM_DC1K-rev-c1.bsp>
+#include <IFM_DC300-rev-a.bsp>
 
 /**
  * @file test_ethercat-mode.xc
@@ -41,9 +43,59 @@ port gpio_ports[4] = {  SOMANET_IFM_GPIO_D0,
                         SOMANET_IFM_GPIO_D1,
                         SOMANET_IFM_GPIO_D2,
                         SOMANET_IFM_GPIO_D3 };
+#elif (MOTOR_FEEDBACK_SENSOR == AMS_SENSOR)
+AMSPorts ams_ports = { {
+        IFM_TILE_CLOCK_2,
+        IFM_TILE_CLOCK_3,
+        SOMANET_IFM_GPIO_D3, //D3,    //mosi
+        SOMANET_IFM_GPIO_D1, //D1,    //sclk
+        SOMANET_IFM_GPIO_D2  },//D2     //miso
+        SOMANET_IFM_GPIO_D0 //D0         //slave select
+};
 #else
-BISSPorts biss_ports = {QEI_PORT, SOMANET_IFM_GPIO_D0, IFM_TILE_CLOCK_2};
+//BISSPorts biss_ports = {QEI_PORT, SOMANET_IFM_GPIO_D0, IFM_TILE_CLOCK_2};
+PwmPorts pwm_ports = { {PWM_PORT_A_HIGH_SIDE, PWM_PORT_B_HIGH_SIDE, PWM_PORT_C_HIGH_SIDE},
+                       {PWM_PORT_A_LOW_SIDE, PWM_PORT_B_LOW_SIDE, PWM_PORT_C_LOW_SIDE},
+                       null, null,PWM_CLOCK_SRC, PWM_DUMMY_PORT_TRIGGER };
+buffered out port:32 p_ifm_motor_hi_d = PWM_PORT_D_HIGH_SIDE;
+buffered out port:32 p_ifm_motor_lo_d = PWM_PORT_D_LOW_SIDE;
+BISSPorts biss_ports = {QEI_PORT, QEI_PORT_INPUT_MODE_SELECTION, IFM_TILE_CLOCK_2};
 #endif
+
+
+void pwm_output(buffered out port:32 p_pwm, buffered out port:32 p_pwm_inv, int duty, int period, int msec) {
+    const unsigned delay = 5*USEC_FAST;
+    timer t;
+    unsigned int ts;
+    if (msec) {
+        t :> ts;
+        msec = ts + msec*MSEC_FAST;
+    }
+
+    while(1) {
+        p_pwm <: 0xffffffff;
+        delay_ticks(period*duty);
+        p_pwm <: 0x00000000;
+        delay_ticks(delay);
+        p_pwm_inv<: 0xffffffff;
+        delay_ticks(period*(100-duty) + 2*delay);
+        p_pwm_inv <: 0x00000000;
+        delay_ticks(delay);
+
+        if (msec) {
+            t :> ts;
+            if (timeafter(ts, msec))
+                break;
+        }
+    }
+}
+void brake_release(buffered out port:32 p_pwm,  buffered out port:32 p_pwm_inv) {
+    printstr(">>   SOMANET BRAKE RELEASE STARTING...\n");
+    p_pwm <: 0;
+    p_pwm_inv <: 0;
+    pwm_output(p_pwm, p_pwm_inv, 100, 100, 100);
+    pwm_output(p_pwm, p_pwm_inv, 22, 10, 0);
+}
 
 int main(void)
 {
@@ -57,6 +109,8 @@ int main(void)
 #if(MOTOR_FEEDBACK_SENSOR == QEI_SENSOR)
     interface QEIInterface i_qei[5];
     interface GPIOInterface i_gpio[1];
+#elif (MOTOR_FEEDBACK_SENSOR == AMS_SENSOR)
+    interface AMSInterface i_ams[5];
 #else
     interface BISSInterface i_biss[5];
 #endif
@@ -115,12 +169,17 @@ int main(void)
 #if(MOTOR_FEEDBACK_SENSOR == QEI_SENSOR)
             ethercat_drive_service( profiler_config,
                                     pdo_out, pdo_in, coe_out,
-                                    i_motorcontrol[3], i_hall[4], i_qei[4], null, i_gpio[0],
+                                    i_motorcontrol[3], i_hall[4], i_qei[4], null, null, i_gpio[0],
+                                    i_torque_control[0], i_velocity_control[0], i_position_control[0]);
+#elif (MOTOR_FEEDBACK_SENSOR == AMS_SENSOR)
+            ethercat_drive_service( profiler_config,
+                                    pdo_out, pdo_in, coe_out,
+                                    i_motorcontrol[3], null, null, null, i_ams[4], null,
                                     i_torque_control[0], i_velocity_control[0], i_position_control[0]);
 #else
             ethercat_drive_service( profiler_config,
                                     pdo_out, pdo_in, coe_out,
-                                    i_motorcontrol[3], i_hall[4], null, i_biss[4], null,
+                                    i_motorcontrol[3], i_hall[4], null, i_biss[4], null, null,
                                     i_torque_control[0], i_velocity_control[0], i_position_control[0]);
 #endif
         }
@@ -143,10 +202,13 @@ int main(void)
 
                      /* Control Loop */
 #if(MOTOR_FEEDBACK_SENSOR == QEI_SENSOR)
-                     position_control_service(position_control_config, i_hall[1], i_qei[1], null, i_motorcontrol[0],
+                     position_control_service(position_control_config, i_hall[1], i_qei[1], null, null, i_motorcontrol[0],
+                                                 i_position_control);
+#elif (MOTOR_FEEDBACK_SENSOR == AMS_SENSOR)
+                     position_control_service(position_control_config, null, null, null, i_ams[1], i_motorcontrol[0],
                                                  i_position_control);
 #else
-                     position_control_service(position_control_config, i_hall[1], null, i_biss[1], i_motorcontrol[0],
+                     position_control_service(position_control_config, i_hall[1], null, i_biss[1], null, i_motorcontrol[0],
                                                  i_position_control);
 #endif
                 }
@@ -165,10 +227,13 @@ int main(void)
 
                     /* Control Loop */
 #if(MOTOR_FEEDBACK_SENSOR == QEI_SENSOR)
-                    velocity_control_service(velocity_control_config, i_hall[2], i_qei[2], null, i_motorcontrol[1],
+                    velocity_control_service(velocity_control_config, i_hall[2], i_qei[2], null, null, i_motorcontrol[1],
+                                                i_velocity_control);
+#elif (MOTOR_FEEDBACK_SENSOR == AMS_SENSOR)
+                    velocity_control_service(velocity_control_config, null, null, null, i_ams[2], i_motorcontrol[1],
                                                 i_velocity_control);
 #else
-                    velocity_control_service(velocity_control_config, i_hall[2], null, i_biss[2], i_motorcontrol[1],
+                    velocity_control_service(velocity_control_config, i_hall[2], null, i_biss[2], null, i_motorcontrol[1],
                                                 i_velocity_control);
 #endif
                 }
@@ -188,10 +253,13 @@ int main(void)
 
                     /* Control Loop */
 #if(MOTOR_FEEDBACK_SENSOR == QEI_SENSOR)
-                    torque_control_service(torque_control_config, i_adc[0], i_hall[3], i_qei[3], null, i_motorcontrol[2],
+                    torque_control_service(torque_control_config, i_adc[0], i_hall[3], i_qei[3], null, null, i_motorcontrol[2],
+                                                i_torque_control);
+#elif (MOTOR_FEEDBACK_SENSOR == AMS_SENSOR)
+                    torque_control_service(torque_control_config, i_adc[0], null, null, null, i_ams[3], i_motorcontrol[2],
                                                 i_torque_control);
 #else
-                    torque_control_service(torque_control_config, i_adc[0], i_hall[3], null, i_biss[3], i_motorcontrol[2],
+                    torque_control_service(torque_control_config, i_adc[0], i_hall[3], null, i_biss[3], null, i_motorcontrol[2],
                                                 i_torque_control);
 #endif
                 }
@@ -228,6 +296,9 @@ int main(void)
                 /* PWM Service */
                 pwm_triggered_service(pwm_ports, c_adctrig, c_pwm_ctrl);
 
+//                /* Brake Release */
+//                brake_release(p_ifm_motor_hi_d, p_ifm_motor_lo_d);
+
                 /* Watchdog Service */
                 watchdog_service(wd_ports, i_watchdog);
 
@@ -253,6 +324,28 @@ int main(void)
 
                 /* GPIO Digital Service */
                 gpio_service(gpio_ports, i_gpio);
+#elif (MOTOR_FEEDBACK_SENSOR == AMS_SENSOR)
+                /* AMS Rotary Sensor Service */
+                {
+                    AMSConfig ams_config;
+                    ams_config.factory_settings = 1;
+                    ams_config.direction = AMS_DIR_CW;
+                    ams_config.hysteresis = 1;
+                    ams_config.noise_setting = AMS_NOISE_NORMAL;
+                    ams_config.uvw_abi = 0;
+                    ams_config.dyn_angle_comp = 0;
+                    ams_config.data_select = 0;
+                    ams_config.pwm_on = AMS_PWM_OFF;
+                    ams_config.abi_resolution = 0;
+                    ams_config.resolution_bits = AMS_RESOLUTION;
+                    ams_config.offset = AMS_OFFSET;
+                    ams_config.pole_pairs = POLE_PAIRS;
+                    ams_config.max_ticks = 0x7fffffff;
+                    ams_config.cache_time = AMS_CACHE_TIME;
+                    ams_config.velocity_loop = AMS_VELOCITY_LOOP;
+
+                    ams_service(ams_ports, ams_config, i_ams);
+                }
 #else
                 /* BiSS service */
                 {
@@ -288,10 +381,13 @@ int main(void)
 
 #if(MOTOR_FEEDBACK_SENSOR == QEI_SENSOR)
                      motorcontrol_service(fet_driver_ports, motorcontrol_config,
-                                             c_pwm_ctrl, i_hall[0], i_qei[0], null, i_watchdog[0], i_motorcontrol);
+                                             c_pwm_ctrl, i_hall[0], i_qei[0], null, null, i_watchdog[0], i_motorcontrol);
+#elif (MOTOR_FEEDBACK_SENSOR == AMS_SENSOR)
+                     motorcontrol_service(fet_driver_ports, motorcontrol_config,
+                                             c_pwm_ctrl, null, null, null, i_ams[0], i_watchdog[0], i_motorcontrol);
 #else
                      motorcontrol_service(fet_driver_ports, motorcontrol_config,
-                                             c_pwm_ctrl, i_hall[0], null, i_biss[0], i_watchdog[0], i_motorcontrol);
+                                             c_pwm_ctrl, i_hall[0], null, i_biss[0], null, i_watchdog[0], i_motorcontrol);
 #endif
                 }
 
