@@ -53,13 +53,7 @@ AMSPorts ams_ports = { {
         SOMANET_IFM_GPIO_D0 //D0         //slave select
 };
 #else
-//BISSPorts biss_ports = {QEI_PORT, SOMANET_IFM_GPIO_D0, IFM_TILE_CLOCK_2};
-PwmPorts pwm_ports = { {PWM_PORT_A_HIGH_SIDE, PWM_PORT_B_HIGH_SIDE, PWM_PORT_C_HIGH_SIDE},
-                       {PWM_PORT_A_LOW_SIDE, PWM_PORT_B_LOW_SIDE, PWM_PORT_C_LOW_SIDE},
-                       null, null,PWM_CLOCK_SRC, PWM_DUMMY_PORT_TRIGGER };
-buffered out port:32 p_ifm_motor_hi_d = PWM_PORT_D_HIGH_SIDE;
-buffered out port:32 p_ifm_motor_lo_d = PWM_PORT_D_LOW_SIDE;
-BISSPorts biss_ports = {QEI_PORT, QEI_PORT_INPUT_MODE_SELECTION, IFM_TILE_CLOCK_2};
+BISSPorts biss_ports = {QEI_PORT, SOMANET_IFM_GPIO_D0, IFM_TILE_CLOCK_2};
 #endif
 
 
@@ -296,9 +290,6 @@ int main(void)
                 /* PWM Service */
                 pwm_triggered_service(pwm_ports, c_adctrig, c_pwm_ctrl);
 
-//                /* Brake Release */
-//                brake_release(p_ifm_motor_hi_d, p_ifm_motor_lo_d);
-
                 /* Watchdog Service */
                 watchdog_service(wd_ports, i_watchdog);
 
@@ -384,7 +375,7 @@ int main(void)
                                              c_pwm_ctrl, i_hall[0], i_qei[0], null, null, i_watchdog[0], i_motorcontrol);
 #elif (MOTOR_FEEDBACK_SENSOR == AMS_SENSOR)
                      motorcontrol_service(fet_driver_ports, motorcontrol_config,
-                                             c_pwm_ctrl, null, null, null, i_ams[0], i_watchdog[0], i_motorcontrol);
+                                             c_pwm_ctrl, i_hall[0], null, null, i_ams[0], i_watchdog[0], i_motorcontrol);
 #else
                      motorcontrol_service(fet_driver_ports, motorcontrol_config,
                                              c_pwm_ctrl, i_hall[0], null, i_biss[0], null, i_watchdog[0], i_motorcontrol);
