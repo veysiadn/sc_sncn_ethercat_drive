@@ -24,7 +24,7 @@
 #define POLE_PAIRS  11
 
 // WINDING TYPE (if applicable) [STAR_WINDING, DELTA_WINDING]
-#define BLDC_WINDING_TYPE   DELTA_WINDING
+#define BLDC_WINDING_TYPE   STAR_WINDING
 
 /////////////////////////////////////////////
 //////  MOTOR SENSORS CONFIGURATION
@@ -56,10 +56,10 @@
 #define COMMUTATION_LOOP_PERIOD     60
 
 // COMMUTATION CW SPIN OFFSET (if applicable) [0:4095]
-#define COMMUTATION_OFFSET_CLK      910
+#define COMMUTATION_OFFSET_CLK      0
 
 // COMMUTATION CCW SPIN OFFSET (if applicable) [0:4095]
-#define COMMUTATION_OFFSET_CCLK     2460
+#define COMMUTATION_OFFSET_CCLK     2048
 
 ///////////////////////////////////////////////
 //////  MOTOR CONTROL CONFIGURATION

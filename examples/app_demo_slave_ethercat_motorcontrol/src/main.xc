@@ -57,40 +57,6 @@ BISSPorts biss_ports = {QEI_PORT, SOMANET_IFM_GPIO_D0, IFM_TILE_CLOCK_2};
 #endif
 
 
-void pwm_output(buffered out port:32 p_pwm, buffered out port:32 p_pwm_inv, int duty, int period, int msec) {
-    const unsigned delay = 5*USEC_FAST;
-    timer t;
-    unsigned int ts;
-    if (msec) {
-        t :> ts;
-        msec = ts + msec*MSEC_FAST;
-    }
-
-    while(1) {
-        p_pwm <: 0xffffffff;
-        delay_ticks(period*duty);
-        p_pwm <: 0x00000000;
-        delay_ticks(delay);
-        p_pwm_inv<: 0xffffffff;
-        delay_ticks(period*(100-duty) + 2*delay);
-        p_pwm_inv <: 0x00000000;
-        delay_ticks(delay);
-
-        if (msec) {
-            t :> ts;
-            if (timeafter(ts, msec))
-                break;
-        }
-    }
-}
-void brake_release(buffered out port:32 p_pwm,  buffered out port:32 p_pwm_inv) {
-    printstr(">>   SOMANET BRAKE RELEASE STARTING...\n");
-    p_pwm <: 0;
-    p_pwm_inv <: 0;
-    pwm_output(p_pwm, p_pwm_inv, 100, 100, 100);
-    pwm_output(p_pwm, p_pwm_inv, 22, 10, 0);
-}
-
 int main(void)
 {
     /* Motor control channels */
@@ -168,7 +134,7 @@ int main(void)
 #elif (MOTOR_FEEDBACK_SENSOR == AMS_SENSOR)
             ethercat_drive_service( profiler_config,
                                     pdo_out, pdo_in, coe_out,
-                                    i_motorcontrol[3], null, null, null, i_ams[4], null,
+                                    i_motorcontrol[3], i_hall[4], null, null, i_ams[4], null,
                                     i_torque_control[0], i_velocity_control[0], i_position_control[0]);
 #else
             ethercat_drive_service( profiler_config,
@@ -199,7 +165,7 @@ int main(void)
                      position_control_service(position_control_config, i_hall[1], i_qei[1], null, null, i_motorcontrol[0],
                                                  i_position_control);
 #elif (MOTOR_FEEDBACK_SENSOR == AMS_SENSOR)
-                     position_control_service(position_control_config, null, null, null, i_ams[1], i_motorcontrol[0],
+                     position_control_service(position_control_config, i_hall[1], null, null, i_ams[1], i_motorcontrol[0],
                                                  i_position_control);
 #else
                      position_control_service(position_control_config, i_hall[1], null, i_biss[1], null, i_motorcontrol[0],
@@ -224,7 +190,7 @@ int main(void)
                     velocity_control_service(velocity_control_config, i_hall[2], i_qei[2], null, null, i_motorcontrol[1],
                                                 i_velocity_control);
 #elif (MOTOR_FEEDBACK_SENSOR == AMS_SENSOR)
-                    velocity_control_service(velocity_control_config, null, null, null, i_ams[2], i_motorcontrol[1],
+                    velocity_control_service(velocity_control_config, i_hall[2], null, null, i_ams[2], i_motorcontrol[1],
                                                 i_velocity_control);
 #else
                     velocity_control_service(velocity_control_config, i_hall[2], null, i_biss[2], null, i_motorcontrol[1],
@@ -250,7 +216,7 @@ int main(void)
                     torque_control_service(torque_control_config, i_adc[0], i_hall[3], i_qei[3], null, null, i_motorcontrol[2],
                                                 i_torque_control);
 #elif (MOTOR_FEEDBACK_SENSOR == AMS_SENSOR)
-                    torque_control_service(torque_control_config, i_adc[0], null, null, null, i_ams[3], i_motorcontrol[2],
+                    torque_control_service(torque_control_config, i_adc[0], i_hall[3], null, null, i_ams[3], i_motorcontrol[2],
                                                 i_torque_control);
 #else
                     torque_control_service(torque_control_config, i_adc[0], i_hall[3], null, i_biss[3], null, i_motorcontrol[2],
@@ -320,7 +286,7 @@ int main(void)
                 {
                     AMSConfig ams_config;
                     ams_config.factory_settings = 1;
-                    ams_config.direction = AMS_DIR_CW;
+                    ams_config.polarity = AMS_POLARITY;
                     ams_config.hysteresis = 1;
                     ams_config.noise_setting = AMS_NOISE_NORMAL;
                     ams_config.uvw_abi = 0;

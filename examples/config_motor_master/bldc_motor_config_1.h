@@ -36,11 +36,11 @@
 #define QEI_SENSOR_POLARITY_1			QEI_POLARITY_NORMAL
 
 /* Commutation offset (range 0-4095) (HALL sensor based commutation) */
-#define COMMUTATION_OFFSET_CLK_1		1350
-#define COMMUTATION_OFFSET_CCLK_1		3600
+#define COMMUTATION_OFFSET_CLK_1		0
+#define COMMUTATION_OFFSET_CCLK_1		2048
 
 /* Motor Winding type (STAR_WINDING/DELTA_WINDING) */
-#define WINDING_TYPE_1				DELTA_WINDING
+#define WINDING_TYPE_1				STAR_WINDING
 
 /* Specify Switch Types (ACTIVE_HIGH/ACTIVE_LOW) when switch is closed
  * (Only if you have any limit switches in the system for safety/homing ) */
