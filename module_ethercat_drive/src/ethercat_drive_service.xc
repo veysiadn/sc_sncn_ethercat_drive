@@ -82,7 +82,7 @@ void ethercat_drive_service(ProfilerConfig &profiler_config,
 
     int init = 0;
     int op_set_flag = 0;
-    int op_mode = 0;
+    int op_mode = 0, op_mode_old = 0, op_mode_commanded_old = 0;
 
     ControlConfig position_ctrl_params;
     ControlConfig torque_ctrl_params;
@@ -111,9 +111,9 @@ void ethercat_drive_service(ProfilerConfig &profiler_config,
     int inactive_timeout_flag = 0;
 
     unsigned int time;
-    int state;
-    int statusword;
-    int controlword;
+    int state = 0, state_old = 0;
+    int statusword = 0, statusword_old = 0;
+    int controlword = 0, controlword_old = 0;
 
     int status=0;
     int tmp=0;
@@ -183,6 +183,11 @@ void ethercat_drive_service(ProfilerConfig &profiler_config,
          * If communication is inactive, trigger quick stop mode if motor is in motion 
          *********************************************************************************/
         if (inactive_timeout_flag == 1) {
+
+            if(controlword != controlword_old || state != state_old || statusword != statusword_old || InOut.operation_mode != op_mode_commanded_old || op_mode != op_mode_old){
+                printf("Inactive_COMM!!!, Control_word: %d  |  State: %d  |   Statusword: %d  |   Op_mode_commanded %d, Op_mode_assigned %d\n", controlword, state, statusword, InOut.operation_mode, op_mode);
+            }
+            controlword_old = controlword; state_old = state; statusword_old = statusword; op_mode_commanded_old = InOut.operation_mode; op_mode_old = op_mode;
 
             /* quick stop for torque mode */
             if (op_mode == CST || op_mode == TQ)
@@ -334,6 +339,11 @@ void ethercat_drive_service(ProfilerConfig &profiler_config,
             /* Update statusword sent to the EtherCAT Master Application */
             statusword = update_statusword(statusword, state, ack, quick_active, shutdown_ack);
             InOut.status_word = statusword;
+
+            if(controlword != controlword_old || state != state_old || statusword != statusword_old || InOut.operation_mode != op_mode_commanded_old || op_mode != op_mode_old){
+                printf("Active_COMM, Control_word: %d  |  State: %d  |   Statusword: %d  |   Op_mode_commanded %d, Op_mode_assigned %d\n", controlword, state, statusword, InOut.operation_mode, op_mode);
+            }
+            controlword_old = controlword; state_old = state; statusword_old = statusword; op_mode_commanded_old = InOut.operation_mode; op_mode_old = op_mode;
 
             if (setup_loop_flag == 0) {
                 if (controlword == 6) {
@@ -735,7 +745,7 @@ void ethercat_drive_service(ProfilerConfig &profiler_config,
             /* After operation mode is selected the loop enters a continuous operation
              * until the operation is shutdown */
             if (mode_selected == 1) {
-                switch (InOut.control_word) {
+                switch (controlword) {
                 case QUICK_STOP:
                     if (op_mode == CST || op_mode == TQ) {
                         if(motorcontrol_config.commutation_method == FOC){
@@ -1260,6 +1270,7 @@ void ethercat_drive_service(ProfilerConfig &profiler_config,
             send_actual_position(actual_position * polarity, InOut);
             t when timerafter(time + MSEC_STD) :> time;
         }
+
 //#pragma xta endpoint "ecatloop_stop"
     }
 }
