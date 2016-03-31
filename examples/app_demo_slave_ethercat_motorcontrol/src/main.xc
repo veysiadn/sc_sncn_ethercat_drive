@@ -1,7 +1,7 @@
 /* INCLUDE BOARD SUPPORT FILES FROM module_board-support */
 #include <COM_ECAT-rev-a.bsp>
 #include <CORE_C22-rev-a.bsp>
-#include <IFM_DC1K-rev-c2.bsp>
+#include <IFM_DC100-rev-b.bsp>
 
 /**
  * @file test_ethercat-mode.xc
@@ -246,7 +246,7 @@ int main(void)
                 adc_service(adc_ports, c_adctrig, i_adc, i_watchdog[1]);
 
                 /* PWM Service */
-                pwm_triggered_service(pwm_ports, c_adctrig, c_pwm_ctrl);
+                pwm_triggered_service(pwm_ports, c_adctrig, c_pwm_ctrl, 0);
 
                 /* Watchdog Service */
                 watchdog_service(wd_ports, i_watchdog);
@@ -322,7 +322,7 @@ int main(void)
                 {
                      MotorcontrolConfig motorcontrol_config;
                      motorcontrol_config.motor_type = BLDC_MOTOR;
-                     motorcontrol_config.commutation_method = FOC;
+                     motorcontrol_config.commutation_method = SINE;
                      motorcontrol_config.commutation_sensor = MOTOR_COMMUTATION_SENSOR;
                      motorcontrol_config.bldc_winding_type = BLDC_WINDING_TYPE;
                      motorcontrol_config.hall_offset[0] =  COMMUTATION_OFFSET_CLK;
