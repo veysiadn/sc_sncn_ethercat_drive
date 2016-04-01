@@ -374,7 +374,7 @@ int set_operation_mode(int operation_mode, int slave_number, master_setup_variab
 		pdo_handle_ecat(master_setup, slv_handles, total_no_of_slaves);
 		if(master_setup->op_flag)
 		{
-			set_controlword(SWITCH_ON_CONTROL, slave_number, slv_handles);
+			set_controlword(SWITCH_ON_CMD, slave_number, slv_handles); // TODO Changed from SWITCH_ON_CONTROL to SWITCH_ON_CMD
 			/*************check switch_on_state***************/
 			status_word = read_statusword(slave_number, slv_handles);
 			switch_on_state = check_switch_on(status_word);
