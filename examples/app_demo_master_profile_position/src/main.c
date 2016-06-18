@@ -86,7 +86,7 @@ int main()
 				actual_position = get_position_actual_ticks(slave_number, slv_handles);
 				actual_velocity = get_velocity_actual_rpm(slave_number, slv_handles);
 				actual_torque = get_torque_actual_mNm(slave_number, slv_handles);
-				printf("Position: %d Velocity: %d Torque: %f ack: %d\n", actual_position, actual_velocity, actual_torque, ack);
+				printf("\r    Position: %d Velocity: %d Torque: %f ack: %d        ", actual_position, actual_velocity, actual_torque, ack);
 			}
 		}
 		if(ack == 1)

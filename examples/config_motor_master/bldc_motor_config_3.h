@@ -12,9 +12,9 @@
  * Define Motor Specific Constants (found in motor specification sheet)
  * Mandatory constants to be set
  */
-#define POLE_PAIRS_3                    7       // Number of pole pairs
-#define MAX_NOMINAL_SPEED_3             3740    // rpm
-#define MAX_NOMINAL_CURRENT_3           5       // A
+#define POLE_PAIRS_3                    7*6       // Number of pole pairs
+#define MAX_NOMINAL_SPEED_3             4000    // rpm
+#define MAX_NOMINAL_CURRENT_3           4       // A
 #define MOTOR_TORQUE_CONSTANT_3         53      // mNm/A
 
 /**
@@ -30,15 +30,15 @@
 
 /* Position Sensor Types (select your sensor type here)
  * (HALL/ QEI_INDEX/ QEI_NO_INDEX) */
-#define SENSOR_SELECTION_CODE_3         QEI_NO_INDEX
+#define SENSOR_SELECTION_CODE_3         AMS_SENSOR
 
 /* Polarity is used to keep all position sensors to count ticks in the same direction
  *  (QEI_POLARITY_NORMAL/QEI_POLARITY_INVERTED) */
 #define QEI_SENSOR_POLARITY_3           QEI_POLARITY_INVERTED
 
 /* Commutation offset (range 0-4095) (HALL sensor based commutation) */
-#define COMMUTATION_OFFSET_CLK_3        683
-#define COMMUTATION_OFFSET_CCLK_3       2731
+#define COMMUTATION_OFFSET_CLK_3        2920
+#define COMMUTATION_OFFSET_CCLK_3       800
 
 /* Motor Winding type (STAR_WINDING/DELTA_WINDING) */
 #define WINDING_TYPE_3                  STAR_WINDING

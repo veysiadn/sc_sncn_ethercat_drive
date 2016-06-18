@@ -33,14 +33,14 @@ void  INThandler(int sig)
 int main()
 {
 
-    int acceleration_drive_1 = 350;     // rpm/s
-    int acceleration_drive_2 = 350;     // rpm/s
+    int acceleration_drive_1 = 20;     // rpm/s
+    int acceleration_drive_2 = 20;     // rpm/s
 
-    int deceleration_drive_1 = 350;     // rpm/s
-    int deceleration_drive_2 = 350;     // rpm/s
+    int deceleration_drive_1 = 20;     // rpm/s
+    int deceleration_drive_2 = 20;     // rpm/s
 
-    int velocity_drive_1 = 350;         // rpm
-    int velocity_drive_2 = 350;         // rpm
+    int velocity_drive_1 = 20;         // rpm
+    int velocity_drive_2 = 20;         // rpm
 
     int actual_position_drive_1 = 0;    // ticks
     int actual_position_drive_2 = 0;    // ticks
@@ -69,7 +69,7 @@ int main()
     #define  ECAT_SLAVE_0 0
     #define  ECAT_SLAVE_1 1
 
-    int one_rotation = 3 * 4096 * 1; //pole pairs * interpolation constant * gear ratio
+    int one_rotation = 16384; //pole pairs * interpolation constant * gear ratio
     bool absolute_position_taken = false;
 
     bool new_target = true;
@@ -123,8 +123,8 @@ int main()
                 }
 
                 /* Setup Target Position */
-                target_position_drive_1 =  zero_position_drive_1 + one_rotation * 5;
-                target_position_drive_2 =  zero_position_drive_2 + one_rotation * 5;
+                target_position_drive_1 =  zero_position_drive_1 + one_rotation;
+                target_position_drive_2 =  zero_position_drive_2 + one_rotation;
 
                 /* Read Actual Position */
                 actual_position_drive_1 = get_position_actual_ticks(ECAT_SLAVE_0, slv_handles);

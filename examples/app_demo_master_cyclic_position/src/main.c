@@ -32,9 +32,9 @@ void  INThandler(int sig)
 int main() {
 
     int target_position = 1*ENCODER_RESOLUTION_1; // ticks
-    int acceleration = 2000; // rpm/s
-    int deceleration = 2000; // rpm/s
-    int velocity = 2000; // rpm
+    int acceleration = 20; // rpm/s
+    int deceleration = 20; // rpm/s
+    int velocity = 20; // rpm
 
     int actual_position = 0; // ticks
     int actual_velocity = 0; // rpm

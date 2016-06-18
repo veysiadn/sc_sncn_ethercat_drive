@@ -12,9 +12,9 @@
  * Define Motor Specific Constants (found in motor specification sheet)
  * Mandatory constants to be set
  */
-#define POLE_PAIRS_2                    3       // Number of pole pairs
+#define POLE_PAIRS_2                    7*6       // Number of pole pairs
 #define MAX_NOMINAL_SPEED_2             4000    // rpm
-#define MAX_NOMINAL_CURRENT_2           2       // A
+#define MAX_NOMINAL_CURRENT_2           4      // A
 #define MOTOR_TORQUE_CONSTANT_2         72      // mNm/A
 
 /**
@@ -22,7 +22,7 @@
  * and any additional encoders attached specify encoder resolution here (Mandatory)
  */
 #define GEAR_RATIO_2                    1       // if no gears are attached - set to gear ratio to 1
-#define ENCODER_RESOLUTION_2          	4000    // Resolution of Incremental Encoder
+#define ENCODER_RESOLUTION_2          	16384    // Resolution of Incremental Encoder
 
 /* Somanet IFM Internal Configuration:  Specifies the current sensor resolution per Ampere
  *  (DC300_RESOLUTION / DC100_RESOLUTION / OLD_DC300_RESOLUTION) */
@@ -30,18 +30,18 @@
 
 /* Position Sensor Types (select your sensor type here)
  * (HALL/ QEI_INDEX/ QEI_NO_INDEX) */
-#define SENSOR_SELECTION_CODE_2         HALL_SENSOR
+#define SENSOR_SELECTION_CODE_2         AMS_SENSOR
 
 /* Polarity is used to keep all position sensors to count ticks in the same direction
  *  (QEI_POLARITY_NORMAL/QEI_POLARITY_INVERTED) */
 #define QEI_SENSOR_POLARITY_2           QEI_POLARITY_NORMAL
 
 /* Commutation offset (range 0-4095) (HALL sensor based commutation) */
-#define COMMUTATION_OFFSET_CLK_2        910
-#define COMMUTATION_OFFSET_CCLK_2       2460
+#define COMMUTATION_OFFSET_CLK_2        3244
+#define COMMUTATION_OFFSET_CCLK_2       1172
 
 /* Motor Winding type (STAR_WINDING/DELTA_WINDING) */
-#define WINDING_TYPE_2                  DELTA_WINDING
+#define WINDING_TYPE_2                  STAR_WINDING
 
 /* Specify Switch Types (ACTIVE_HIGH/ACTIVE_LOW) when switch is closed
  * (Only if you have any limit switches in the system for safety/homing ) */

@@ -1,9 +1,9 @@
 /* INCLUDE BOARD SUPPORT FILES FROM module_board-support */
 #include <COM_ECAT-rev-a.bsp>
 #include <CORE_C22-rev-a.bsp>
-//#include <IFM_DC100-rev-b.bsp>
+#include <IFM_DC100-rev-b.bsp>
 //#include <IFM_DC1K-rev-c1.bsp>
-#include <IFM_DC300-rev-a.bsp>
+//#include <IFM_DC300-rev-a.bsp>
 
 /**
  * @file test_ethercat-mode.xc
@@ -44,18 +44,65 @@ port gpio_ports[4] = {  SOMANET_IFM_GPIO_D0,
                         SOMANET_IFM_GPIO_D2,
                         SOMANET_IFM_GPIO_D3 };
 #elif (MOTOR_FEEDBACK_SENSOR == AMS_SENSOR)
-AMSPorts ams_ports = { {
-        IFM_TILE_CLOCK_2,
-        IFM_TILE_CLOCK_3,
-        SOMANET_IFM_GPIO_D3, //D3,    //mosi
-        SOMANET_IFM_GPIO_D1, //D1,    //sclk
-        SOMANET_IFM_GPIO_D2  },//D2     //miso
-        SOMANET_IFM_GPIO_D0 //D0         //slave select
-};
+AMSPorts ams_ports = SOMANET_IFM_AMS_PORTS;
 #else
 BISSPorts biss_ports = {QEI_PORT, SOMANET_IFM_GPIO_D0, IFM_TILE_CLOCK_2};
 #endif
 
+
+void position_profile_test(interface PositionControlInterface client i_position_control,
+                           interface HallInterface client ?i_hall,
+                           interface QEIInterface client ?i_qei,
+                           interface BISSInterface client ?i_biss,
+                           interface AMSInterface client ?i_ams)
+{
+    const int target = 16000;
+    int target_position = target;        // HALL: 1 rotation = 4096 x nr. pole pairs; QEI: your encoder documented resolution x 4 = one rotation
+    int velocity        = 1000;         // rpm
+    int acceleration    = 100;         // rpm/s
+    int deceleration    = 100;         // rpm/s
+    int follow_error = 0;
+    int actual_position = 0;
+
+    ProfilerConfig profiler_config;
+    profiler_config.polarity = POLARITY;
+    profiler_config.max_position = MAX_POSITION_LIMIT;
+    profiler_config.min_position = MIN_POSITION_LIMIT;
+
+    profiler_config.max_velocity = MAX_VELOCITY;
+    profiler_config.max_acceleration = MAX_ACCELERATION;
+    profiler_config.max_deceleration = MAX_DECELERATION;
+
+    /* Initialise the position profile generator */
+    init_position_profiler(profiler_config, i_position_control, i_hall, i_qei, i_biss, i_ams);
+
+    /* Set new target position for profile position control */
+    set_profile_position(target_position, velocity, acceleration, deceleration, i_position_control);
+
+    while(1)
+    {
+        // Read actual position from the Position Control Server
+        actual_position = i_position_control.get_position();
+        follow_error = target_position - actual_position;
+
+        /*
+        xscope_core_int(0, actual_position);
+        xscope_core_int(1, target_position);
+        xscope_core_int(2, follow_error);
+        */
+        // Keep motor turning when reaching target position
+        if ((target_position == target) && (follow_error < 100)){
+
+            target_position = 0;
+            set_profile_position(target_position, velocity, acceleration, deceleration, i_position_control);
+
+        } else if ((target_position == 0) && (follow_error < 100)){
+
+            target_position = target;
+            set_profile_position(target_position, velocity, acceleration, deceleration, i_position_control);
+        }
+    }
+}
 
 int main(void)
 {
@@ -71,7 +118,7 @@ int main(void)
     interface GPIOInterface i_gpio[1];
 #elif (MOTOR_FEEDBACK_SENSOR == AMS_SENSOR)
     interface AMSInterface i_ams[5];
-#else
+#elif (MOTOR_FEEDBACK_SENSOR == BISS_SENSOR)
     interface BISSInterface i_biss[5];
 #endif
 
@@ -134,14 +181,15 @@ int main(void)
 #elif (MOTOR_FEEDBACK_SENSOR == AMS_SENSOR)
             ethercat_drive_service( profiler_config,
                                     pdo_out, pdo_in, coe_out,
-                                    i_motorcontrol[3], i_hall[4], null, null, i_ams[4], null,
+                                    i_motorcontrol[3], null, null, null, i_ams[4], null,
                                     i_torque_control[0], i_velocity_control[0], i_position_control[0]);
 #else
             ethercat_drive_service( profiler_config,
                                     pdo_out, pdo_in, coe_out,
-                                    i_motorcontrol[3], i_hall[4], null, i_biss[4], null, null,
+                                    i_motorcontrol[3], i_hall[4], null, null, null, null,
                                     i_torque_control[0], i_velocity_control[0], i_position_control[0]);
 #endif
+           // position_profile_test(i_position_control[0], null, null, null, i_ams[4]);
         }
 
         on tile[APP_TILE_2]:
@@ -165,10 +213,10 @@ int main(void)
                      position_control_service(position_control_config, i_hall[1], i_qei[1], null, null, i_motorcontrol[0],
                                                  i_position_control);
 #elif (MOTOR_FEEDBACK_SENSOR == AMS_SENSOR)
-                     position_control_service(position_control_config, i_hall[1], null, null, i_ams[1], i_motorcontrol[0],
+                     position_control_service(position_control_config, null, null, null, i_ams[1], i_motorcontrol[0],
                                                  i_position_control);
 #else
-                     position_control_service(position_control_config, i_hall[1], null, i_biss[1], null, i_motorcontrol[0],
+                     position_control_service(position_control_config, i_hall[1], null, null, null, i_motorcontrol[0],
                                                  i_position_control);
 #endif
                 }
@@ -190,10 +238,10 @@ int main(void)
                     velocity_control_service(velocity_control_config, i_hall[2], i_qei[2], null, null, i_motorcontrol[1],
                                                 i_velocity_control);
 #elif (MOTOR_FEEDBACK_SENSOR == AMS_SENSOR)
-                    velocity_control_service(velocity_control_config, i_hall[2], null, null, i_ams[2], i_motorcontrol[1],
+                    velocity_control_service(velocity_control_config, null, null, null, i_ams[2], i_motorcontrol[1],
                                                 i_velocity_control);
 #else
-                    velocity_control_service(velocity_control_config, i_hall[2], null, i_biss[2], null, i_motorcontrol[1],
+                    velocity_control_service(velocity_control_config, i_hall[2], null, null, null, i_motorcontrol[1],
                                                 i_velocity_control);
 #endif
                 }
@@ -219,7 +267,7 @@ int main(void)
                     torque_control_service(torque_control_config, i_adc[0], i_hall[3], null, null, i_ams[3], i_motorcontrol[2],
                                                 i_torque_control);
 #else
-                    torque_control_service(torque_control_config, i_adc[0], i_hall[3], null, i_biss[3], null, i_motorcontrol[2],
+                    torque_control_service(torque_control_config, i_adc[0], i_hall[3], null, null, null, i_motorcontrol[2],
                                                 i_torque_control);
 #endif
                 }
@@ -295,15 +343,15 @@ int main(void)
                     ams_config.pwm_on = AMS_PWM_OFF;
                     ams_config.abi_resolution = 0;
                     ams_config.resolution_bits = AMS_RESOLUTION;
-                    ams_config.offset = AMS_OFFSET;
-                    ams_config.pole_pairs = POLE_PAIRS;
+                    ams_config.offset = 13325;
+                    ams_config.pole_pairs = POLE_PAIRS*6;
                     ams_config.max_ticks = 0x7fffffff;
                     ams_config.cache_time = AMS_CACHE_TIME;
                     ams_config.velocity_loop = AMS_VELOCITY_LOOP;
 
                     ams_service(ams_ports, ams_config, i_ams);
                 }
-#else
+#elif (MOTOR_FEEBBACK_SENSOR == BISS_SENSOR)
                 /* BiSS service */
                 {
                     BISSConfig biss_config;
@@ -332,8 +380,8 @@ int main(void)
                          motorcontrol_config.motor_type = BLDC_MOTOR;
                          motorcontrol_config.commutation_sensor = MOTOR_COMMUTATION_SENSOR;
                          motorcontrol_config.bldc_winding_type = BLDC_WINDING_TYPE;
-                         motorcontrol_config.hall_offset[0] =  COMMUTATION_OFFSET_CLK;
-                         motorcontrol_config.hall_offset[1] = COMMUTATION_OFFSET_CCLK;
+                         motorcontrol_config.hall_offset[0] = 3000;//COMMUTATION_OFFSET_CLK;
+                         motorcontrol_config.hall_offset[1] = 854;//COMMUTATION_OFFSET_CCLK;
                          motorcontrol_config.commutation_loop_period =  COMMUTATION_LOOP_PERIOD;
 
 #if(MOTOR_FEEDBACK_SENSOR == QEI_SENSOR)
@@ -341,10 +389,10 @@ int main(void)
                                              c_pwm_ctrl, i_hall[0], i_qei[0], null, null, i_watchdog[0], i_motorcontrol);
 #elif (MOTOR_FEEDBACK_SENSOR == AMS_SENSOR)
                      motorcontrol_service(fet_driver_ports, motorcontrol_config,
-                                             c_pwm_ctrl, i_hall[0], null, null, i_ams[0], i_watchdog[0], i_motorcontrol);
+                                             c_pwm_ctrl, null, null, null, i_ams[0], i_watchdog[0], i_motorcontrol);
 #else
                      motorcontrol_service(fet_driver_ports, motorcontrol_config,
-                                             c_pwm_ctrl, i_hall[0], null, i_biss[0], null, i_watchdog[0], i_motorcontrol);
+                                             c_pwm_ctrl, i_hall[0], null, null, null, i_watchdog[0], i_motorcontrol);
 #endif
                 }
 

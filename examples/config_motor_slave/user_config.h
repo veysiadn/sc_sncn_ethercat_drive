@@ -7,6 +7,7 @@
 
 #include <qei_service.h>
 #include <hall_service.h>
+#include <ams_service.h>
 #include <motorcontrol_service.h>
 
 /**************************************************
@@ -21,7 +22,7 @@
 #define MOTOR_TYPE  BLDC_MOTOR
 
 // NUMBER OF POLE PAIRS (if applicable)
-#define POLE_PAIRS  11
+#define POLE_PAIRS  7
 
 // WINDING TYPE (if applicable) [STAR_WINDING, DELTA_WINDING]
 #define BLDC_WINDING_TYPE   STAR_WINDING
@@ -56,10 +57,10 @@
 #define COMMUTATION_LOOP_PERIOD     60
 
 // COMMUTATION CW SPIN OFFSET (if applicable) [0:4095]
-#define COMMUTATION_OFFSET_CLK      0
+#define COMMUTATION_OFFSET_CLK      2920
 
 // COMMUTATION CCW SPIN OFFSET (if applicable) [0:4095]
-#define COMMUTATION_OFFSET_CCLK     2048
+#define COMMUTATION_OFFSET_CCLK     800
 
 ///////////////////////////////////////////////
 //////  MOTOR CONTROL CONFIGURATION
@@ -69,8 +70,8 @@
 #define CONTROL_LOOP_PERIOD     1000
 
 // PID FOR POSITION CONTROL (if applicable) [will be divided by 10000]
-#define POSITION_Kp       1000
-#define POSITION_Ki       1
+#define POSITION_Kp       20000
+#define POSITION_Ki       100
 #define POSITION_Kd       0
 
 // PID FOR VELOCITY CONTROL (if applicable) [will be divided by 10000]
@@ -91,15 +92,15 @@
 #define POLARITY           1
 
 // DEFAULT PROFILER SETTINGS FOR PROFILE ETHERCAT DRIVE
-#define PROFILE_VELOCITY        1000        // rpm
-#define PROFILE_ACCELERATION    2000        // rpm/s
-#define PROFILE_DECELERATION    2000        // rpm/s
+#define PROFILE_VELOCITY        100        // rpm
+#define PROFILE_ACCELERATION    200        // rpm/s
+#define PROFILE_DECELERATION    200        // rpm/s
 #define PROFILE_TORQUE_SLOPE    400         // adc_ticks
 
 // PROFILER LIMITIS
 #define MAX_POSITION_LIMIT      0x7fffffff        // ticks (max range: 2^30, limited for safe operation)
 #define MIN_POSITION_LIMIT      -0x7fffffff       // ticks (min range: -2^30, limited for safe operation)
-#define MAX_VELOCITY            4000            // rpm
+#define MAX_VELOCITY            400            // rpm
 #define MAX_ACCELERATION        4000            // rpm/s
 #define MAX_DECELERATION        4000            // rpm/s
 #define MAX_CURRENT_VARIATION   800             // adc_ticks/s
