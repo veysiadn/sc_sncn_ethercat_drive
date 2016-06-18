@@ -55,10 +55,10 @@ int main()
     int direction = -1;
     int n_init_ticks = 3;
 
-    params.target_position = 100000; // ticks
-    params.acceleration = 200; // rpm/s
-    params.deceleration = 200; // rpm/s
-    params.velocity = 200; // rpm
+    params.target_position = 16000; // ticks
+    params.acceleration = 20; // rpm/s
+    params.deceleration = 20; // rpm/s
+    params.velocity = 20; // rpm
 
     /* Initialize the mutex */
     if(pthread_mutex_init(&(params.lock), NULL) != 0)
@@ -91,7 +91,7 @@ int main()
 
     /* Just for better printing result */
     printf("\n");
-    //Ssystem("setterm -cursor off");
+    system("setterm -cursor off");
 
     /* Getting actual position */
     actual_position = get_position_actual_ticks(ECAT_SLAVE_0, slv_handles);
@@ -217,11 +217,12 @@ int main()
     shutdown_operation(CSP, ECAT_SLAVE_0, &master_setup, slv_handles,
             TOTAL_NUM_OF_SLAVES);
 
-    pthread_join(user_application_thread, NULL);
+    pthread_cancel(user_application_thread);
     pthread_mutex_destroy(&(params.lock));
 
+
     /* Just for better printing result */
-    //system("setterm -cursor on");
+    system("setterm -cursor on");
 
     return 0;
 }

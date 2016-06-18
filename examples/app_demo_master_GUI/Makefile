@@ -67,6 +67,7 @@ else
 		then \
 		mkdir bin -p;\
 		gcc $(ODIR)/main.o $(ODIR)/user_application.o $(LIBS) $(INCLUDE_DIRS) $(LIB_DIRS) $(FLAGS) -o $(BINDIR)/$(notdir $(shell pwd)); \
+		rm -rf $(ODIR);\
 		echo ;\
 		echo "Run your application by typing: sudo bin/$(notdir $(shell pwd))" ;\
 		echo ;\
@@ -79,11 +80,15 @@ else
 endif
 
 main.o: $(SDIR)/main.c
+	mkdir -p $(ODIR)
 	gcc -c $(SDIR)/main.c $(LIBS) $(INCLUDE_DIRS) $(LIB_DIRS) $(FLAGS) -o $(ODIR)/main.o
 
 user_application.o: $(SDIR)/user_application.c
+	mkdir -p $(ODIR)
 	gcc -c $(SDIR)/user_application.c $(LIBS) $(INCLUDE_DIRS) $(LIB_DIRS) $(FLAGS) -o $(ODIR)/user_application.o
 
 clean:
 	rm -f $(BINDIR)/$(notdir $(shell pwd))
 	rm -f $(ODIR)/*
+
+
