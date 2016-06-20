@@ -100,7 +100,7 @@ void *user_application(void *param)
             /*Print the content of the LOCAL variables*/
             case 'l':
             {
-                printf("Variables to commit:\nslave=%d\nvelocity=%d\nvelocity=%d\ndeceleration=%d\ntarget=%d\n", slave, velocity, acceleration, deceleration, target);
+                printf("Variables to commit:\nslave=%d\nvelocity=%d\nacceleration=%d\ndeceleration=%d\ntarget=%d\n", slave, velocity, acceleration, deceleration, target);
             }
             break;
 

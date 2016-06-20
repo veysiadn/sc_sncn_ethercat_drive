@@ -132,7 +132,6 @@ int main()
 
     /* Just for better printing result */
     printf("\n");
-    //system("setterm -cursor off");
 
     for (node=0; node < TOTAL_NUM_OF_SLAVES; node++)
     {
@@ -180,7 +179,6 @@ int main()
                     /* Read Actual Position from the node for initialization */
                     if (!absolute_position_taken) {
                         //printf("taking abs position\n");
-                        //for (node=0; node < TOTAL_NUM_OF_SLAVES; node++)
                         slave_main_params[node].zero_pos = get_position_actual_ticks(slave_main_params[node].slave_num, slv_handles);
                         pdo_handle_ecat(&master_setup, slv_handles, TOTAL_NUM_OF_SLAVES);
                         absolute_position_taken = true;
@@ -189,10 +187,8 @@ int main()
                     }
 
                     /* Setup Target Position */
-                        //for (node=0; node < TOTAL_NUM_OF_slave_main_params; node++)
                     slave_main_params[node].target_pos = slave_main_params[node].zero_pos + slave_main_params[node].direction * slave_main_params[node].target_pos;
                     /* Read Actual Position */
-                    //for (node=0; node < TOTAL_NUM_OF_SLAVES; node++) {
                     slave_main_params[node].act_pos = get_position_actual_ticks(slave_main_params[node].slave_num, slv_handles);
 
                     /* Compute steps needed for the target position */
