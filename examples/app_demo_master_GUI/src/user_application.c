@@ -1,31 +1,33 @@
 #include <stdio.h>
 #include <ctype.h>
+#include <stdbool.h>
 #include "user_application.h"
 
 
 void print_help(void)
 {
     printf("How to use SOMANET ETHERCAT interactive master\n");
-    printf("v:\tNew velocity\n");
-    printf("a:\tNew acceleration\n");
-    printf("d:\tNew Deceleration\n");
-    printf("t:\tNew target position\n");
-    printf("p:\tPrint the EtherCAT variables\n");
-    printf("l:\tPrint the local variables\n");
-    printf("c:\tCommit the variables to the EtherCAT thread\n");
-    printf("x:\tReturning to zero position and exiting the application\n");
-    printf("h:\tPrint this help\n");
+    printf("\tv: New velocity\n");
+    printf("\ta: New acceleration\n");
+    printf("\td: New Deceleration\n");
+    printf("\tt: New target position\n");
+    printf("\tp: Print the EtherCAT variables\n");
+    printf("\tl: Print the local variables\n");
+    printf("\tc: Commit the variables to the EtherCAT thread\n");
+    printf("\tn: Set slave number\n");
+    printf("\tx: Returning to zero position and exiting the application\n");
+    printf("\th: Print this help\n");
 
 }
 
 void *user_application(void *param)
 {
     ECat_parameters *parameters =  (ECat_parameters*) param;
-    int velocity = 200;
-    int acceleration = 200;
-    int deceleration = 200;
-    int target = 100000;
-    char buffer[20];
+    int velocity = 20;
+    int acceleration = 20;
+    int deceleration = 20;
+    int target = 10000;
+    int slave = 0;
     int value;
     int sign;
     char mode;
@@ -48,31 +50,40 @@ void *user_application(void *param)
             } else if (c != ' ')
                 mode = c;
         }
-        //scanf("%s", buffer);
 
         /*Prepare a new velocity update*/
         switch(mode)
         {
+            case 'n':
+            {
+                if (slave >= 3)
+                    printf("Wrong slave number\n");
+                else
+                {
+                    slave = value;
+                    printf("Slave: %d\n", slave);
+                }
+            }
+            break;
+
             case 'v':
             {
                 velocity = value*sign;
-                printf("\nNew velocity: %d\n", velocity);
+                printf("New velocity: %d\n", velocity);
             }
             break;
 
         /*Prepare a new acceleration update*/
             case 'a':
             {
-//                scanf("%d", &acceleration);
                 acceleration = value*sign;
-                printf("\nNew acceleration: %d\n", acceleration);
+                printf("New acceleration: %d\n", acceleration);
             }
             break;
 
             /*Prepare a new decelerration update*/
             case 'd':
             {
-//                scanf("%d", &deceleration);
                 deceleration = value*sign;
                 printf("New deceleration: %d\n", deceleration);
             }
@@ -81,7 +92,6 @@ void *user_application(void *param)
             /*Prepare a new target position update*/
             case 't':
             {
-//                scanf("%d", &target);
                 target = value*sign;
                 printf("New target position: %d\n", target);
             }
@@ -90,7 +100,7 @@ void *user_application(void *param)
             /*Print the content of the LOCAL variables*/
             case 'l':
             {
-                printf("\nVariables to commit:\nvelocity=%d\nvelocity=%d\ndeceleration=%d\ntarget=%d\n", velocity, acceleration, deceleration, target);
+                printf("Variables to commit:\nslave=%d\nvelocity=%d\nvelocity=%d\ndeceleration=%d\ntarget=%d\n", slave, velocity, acceleration, deceleration, target);
             }
             break;
 
@@ -102,7 +112,8 @@ void *user_application(void *param)
                 {
                     if(pthread_mutex_trylock(&(parameters->lock)) == 0)
                     {
-                        printf("\nCurrent parameters:\nvelocity=%d\nacceleration=%d\ndeceleration=%d\ntarget=%d\n", parameters->velocity, parameters->acceleration, parameters->deceleration, parameters->target_position);
+                        printf("Current parameters:\nslave=%d\nvelocity=%d\nacceleration=%d\ndeceleration=%d\ntarget=%d\n",
+                                parameters->slave, parameters->velocity, parameters->acceleration, parameters->deceleration, parameters->target_position);
                         doing = 0;
                         pthread_mutex_unlock(&(parameters->lock));
                     }
@@ -122,6 +133,8 @@ void *user_application(void *param)
                         parameters->acceleration = acceleration;
                         parameters->deceleration = deceleration;
                         parameters->target_position = target;
+                        parameters->slave = slave;
+                        parameters->flag = true;
                         printf("Parameters updated\n");
                         doing = 0;
                         pthread_mutex_unlock(&(parameters->lock));
@@ -136,6 +149,12 @@ void *user_application(void *param)
                 printf("Returning to zero position and exiting the application\n");
                 raise(SIGINT);
                 return NULL;
+            }
+            break;
+
+            case 'h':
+            {
+                print_help();
             }
             break;
 

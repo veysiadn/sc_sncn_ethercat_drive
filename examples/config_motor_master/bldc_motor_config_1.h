@@ -67,8 +67,8 @@
 /* Control specific constants/variables */
 	/* Torque Control (Mandatory if Torque control used)
 	 * Note: DENOMINATOR is defined as 10000 to give ranges */
-#define TORQUE_Kp_NUMERATOR_1 	   		1000	//Denominator is 10000
-#define TORQUE_Ki_NUMERATOR_1    		91	//Denominator is 10000
+#define TORQUE_Kp_NUMERATOR_1 	   		10000	//Denominator is 10000
+#define TORQUE_Ki_NUMERATOR_1    		100	//Denominator is 10000
 #define TORQUE_Kd_NUMERATOR_1    		0	//Denominator is 10000
 
 	/* Velocity Control (Mandatory if Velocity control used)
@@ -89,8 +89,8 @@
 	#define MIN_POSITION_LIMIT_1			-POLE_PAIRS_1*HALL_POSITION_INTERPOLATED_RANGE*GEAR_RATIO_1	// ticks (min range: -2^30, limited for safe operation)
 
 #else // PID gains for position control with other Encoders
-	#define POSITION_Kp_NUMERATOR_1         1000	//Denominator is 10000
-	#define POSITION_Ki_NUMERATOR_1         1	//Denominator is 10000
+	#define POSITION_Kp_NUMERATOR_1         10000	//Denominator is 10000
+	#define POSITION_Ki_NUMERATOR_1         100	//Denominator is 10000
 	#define POSITION_Kd_NUMERATOR_1         0	//Denominator is 10000
 
 	#define MAX_POSITION_LIMIT_1            0x7fffffff       // ticks (max range: 2^30, limited for safe operation)

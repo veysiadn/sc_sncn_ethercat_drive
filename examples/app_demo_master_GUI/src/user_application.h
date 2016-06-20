@@ -9,10 +9,12 @@
 
 typedef struct {
 
+    int slave;
     int target_position;
     int acceleration;
     int deceleration;
     int velocity;
+    bool flag;
     pthread_mutex_t lock;
 
 }ECat_parameters;

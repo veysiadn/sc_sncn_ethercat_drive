@@ -67,47 +67,38 @@
 
 /* Control specific constants/variables */
     /* Torque Control (Mandatory if Torque control used)
-     * possible range of gains Kp/Ki/Kd: 1/65536 to 32760
-     * Note: gains are calculated as NUMERATOR/DENOMINATOR to give ranges */
-#define TORQUE_Kp_NUMERATOR_2           2
-#define TORQUE_Kp_DENOMINATOR_2         10
-#define TORQUE_Ki_NUMERATOR_2           1
-#define TORQUE_Ki_DENOMINATOR_2         110
-#define TORQUE_Kd_NUMERATOR_2           0
-#define TORQUE_Kd_DENOMINATOR_2         10
+     * Note: DENOMINATOR is defined as 10000 to give ranges */
+#define TORQUE_Kp_NUMERATOR_2           10000   //Denominator is 10000
+#define TORQUE_Ki_NUMERATOR_2           100 //Denominator is 10000
+#define TORQUE_Kd_NUMERATOR_2           0   //Denominator is 10000
 
     /* Velocity Control (Mandatory if Velocity control used)
-     * possible range of gains Kp/Ki/Kd: 1/65536 to 32760
-     * Note: gains are calculated as NUMERATOR/DENOMINATOR to give ranges */
-#define VELOCITY_Kp_NUMERATOR_2         1
-#define VELOCITY_Kp_DENOMINATOR_2       15
-#define VELOCITY_Ki_NUMERATOR_2         2
-#define VELOCITY_Ki_DENOMINATOR_2       100
-#define VELOCITY_Kd_NUMERATOR_2         0
-#define VELOCITY_Kd_DENOMINATOR_2       1
+     * Note: DENOMINATOR is defined as 10000 to give ranges */
+#define VELOCITY_Kp_NUMERATOR_2         667 //Denominator is 10000
+#define VELOCITY_Ki_NUMERATOR_2         200 //Denominator is 10000
+#define VELOCITY_Kd_NUMERATOR_2         0   //Denominator is 10000
 
     /* Position Control (Mandatory if Position control used)
-     * possible range of gains Kp/Ki/Kd: 1/65536 to 32760
-     * Note: gains are calculated as NUMERATOR/DENOMINATOR to give ranges */
-#if(SENSOR_SELECTION_CODE_2 == HALL)        // PID gains for position control with Hall Sensor
-    #define POSITION_Kp_NUMERATOR_2         100
-    #define POSITION_Kp_DENOMINATOR_2       1000
-    #define POSITION_Ki_NUMERATOR_2         1
-    #define POSITION_Ki_DENOMINATOR_2       1200
-    #define POSITION_Kd_NUMERATOR_2         0
-    #define POSITION_Kd_DENOMINATOR_2       1000
-    #define MAX_POSITION_LIMIT_2            POLE_PAIRS_2*HALL_POSITION_INTERPOLATED_RANGE*GEAR_RATIO_2 * 10     // ticks (max range: 2^30, limited for safe operation) qei/hall/any position sensor
-    #define MIN_POSITION_LIMIT_2            -POLE_PAIRS_2*HALL_POSITION_INTERPOLATED_RANGE*GEAR_RATIO_2 * 10    // ticks (min range: -2^30, limited for safe operation) qei/hall/any position sensor
+     * Note: DENOMINATOR is defined as 10000 to give ranges */
+#if(SENSOR_SELECTION_CODE_2 == HALL_SENSOR)     // PID gains for position control with Hall Sensor
+
+    #define POSITION_Kp_NUMERATOR_2         1000    //Denominator is 10000
+    #define POSITION_Ki_NUMERATOR_2         1   //Denominator is 10000
+    #define POSITION_Kd_NUMERATOR_2         0   //Denominator is 10000
+
+    #define MAX_POSITION_LIMIT_2            POLE_PAIRS_2*HALL_POSITION_INTERPOLATED_RANGE*GEAR_RATIO_2  // ticks (max range: 2^30, limited for safe operation)
+    #define MIN_POSITION_LIMIT_2            -POLE_PAIRS_2*HALL_POSITION_INTERPOLATED_RANGE*GEAR_RATIO_2 // ticks (min range: -2^30, limited for safe operation)
+
 #else // PID gains for position control with other Encoders
-    #define POSITION_Kp_NUMERATOR_2         660
-    #define POSITION_Kp_DENOMINATOR_2       80
-    #define POSITION_Ki_NUMERATOR_2         1
-    #define POSITION_Ki_DENOMINATOR_2       25384
-    #define POSITION_Kd_NUMERATOR_2         0
-    #define POSITION_Kd_DENOMINATOR_2       100
-    #define MAX_POSITION_LIMIT_2            GEAR_RATIO_2*ENCODER_RESOLUTION_2       // ticks (max range: 2^30, limited for safe operation)
-    #define MIN_POSITION_LIMIT_2            -GEAR_RATIO_2*ENCODER_RESOLUTION_2      // ticks (min range: -2^30, limited for safe operation)
+    #define POSITION_Kp_NUMERATOR_2         10000    //Denominator is 10000
+    #define POSITION_Ki_NUMERATOR_2         100   //Denominator is 10000
+    #define POSITION_Kd_NUMERATOR_2         0   //Denominator is 10000
+
+    #define MAX_POSITION_LIMIT_2            0x7fffffff       // ticks (max range: 2^30, limited for safe operation)
+    #define MIN_POSITION_LIMIT_2            -0x7fffffff      // ticks (min range: -2^30, limited for safe operation)
+
 #endif
 
 #endif
+
 
