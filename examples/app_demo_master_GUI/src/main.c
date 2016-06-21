@@ -136,7 +136,7 @@ int main()
 
     pthread_create(&user_application_thread, NULL, user_application, &ui_params);
 
-    /* Just for better printing result */
+
     printf("\n");
 
     for (node=0; node < TOTAL_NUM_OF_SLAVES; node++)
@@ -160,13 +160,13 @@ int main()
 
         if (ui_params.flag)
         {
-            target = ui_params.target_position > 0? ui_params.target_position:target;
-            velocity = ui_params.velocity > 0? ui_params.velocity:velocity;
-            deceleration = ui_params.deceleration > 0? ui_params.deceleration:deceleration;
-            acceleration = ui_params.acceleration > 0? ui_params.acceleration:acceleration;
+            target = ui_params.target_position == 0? target:ui_params.target_position;
+            velocity = ui_params.velocity == 0? velocity:ui_params.velocity;
+            deceleration = ui_params.deceleration == 0? deceleration:ui_params.deceleration;
+            acceleration = ui_params.acceleration == 0? acceleration:ui_params.acceleration;
             /* Compute a target position */
-            slave_main_params[ui_params.slave].target_pos = slave_main_params[ui_params.slave].start_pos + slave_main_params[ui_params.slave].direction
-                    * target;
+            slave_main_params[ui_params.slave].target_pos = slave_main_params[ui_params.slave].start_pos
+                    + slave_main_params[ui_params.slave].direction * target;
             slave_main_params[ui_params.slave].velocity = velocity;
             slave_main_params[ui_params.slave].acc = acceleration;
             slave_main_params[ui_params.slave].dec = deceleration;
@@ -245,6 +245,7 @@ int main()
     }
 
     break_loop = false;
+    // delay
     while (delay_inc < 1000000000){delay_inc++;}
 
     printf("\nReturn to start position\n");
@@ -310,18 +311,14 @@ int main()
         printf("Stop Slave %d...\n", node);
         quick_stop_position(slave_main_params[node].slave_num, &master_setup, slv_handles, TOTAL_NUM_OF_SLAVES);
 
-    /* Regain control of node to continue after quick stop */
-    //for (node=0; node < TOTAL_NUM_OF_SLAVES; node++)
+        /* Regain control of node to continue after quick stop */
         renable_ctrl_quick_stop(CSP, slave_main_params[node].slave_num, &master_setup, slv_handles, TOTAL_NUM_OF_SLAVES); //after quick-stop
 
-    //for (node=0; node < TOTAL_NUM_OF_SLAVES; node++)
         set_operation_mode(CSP, slave_main_params[node].slave_num, &master_setup, slv_handles, TOTAL_NUM_OF_SLAVES);
 
-    //for (node=0; node < TOTAL_NUM_OF_SLAVES; node++)
         enable_operation(slave_main_params[node].slave_num, &master_setup, slv_handles, TOTAL_NUM_OF_SLAVES);
 
-    /* Shutdown node operations */
-    //for (node=0; node < TOTAL_NUM_OF_SLAVES; node++)
+        /* Shutdown node operations */
         shutdown_operation(CSP, slave_main_params[node].slave_num, &master_setup, slv_handles, TOTAL_NUM_OF_SLAVES);
         printf("\n;");
     }
@@ -329,9 +326,6 @@ int main()
 
     pthread_cancel(user_application_thread);
     pthread_mutex_destroy(&(ui_params.lock));
-
-    /* Just for better printing result */
-    //system("setterm -cursor on");
 
     return 0;
 }
