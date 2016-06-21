@@ -6,7 +6,6 @@
 
 #ifndef _MOTOR_3
 #define _MOTOR_3
-//#include <common_config.h>
 
 /**
  * Define Motor Specific Constants (found in motor specification sheet)
@@ -15,14 +14,14 @@
 #define POLE_PAIRS_3                    7*6       // Number of pole pairs
 #define MAX_NOMINAL_SPEED_3             4000    // rpm
 #define MAX_NOMINAL_CURRENT_3           4       // A
-#define MOTOR_TORQUE_CONSTANT_3         53      // mNm/A
+#define MOTOR_TORQUE_CONSTANT_3         72      // mNm/A
 
 /**
  * If you have any gears added, specify gear-ratio
  * and any additional encoders attached specify encoder resolution here (Mandatory)
  */
-#define GEAR_RATIO_3                    4       // if no gears are attached - set to gear ratio to 1
-#define ENCODER_RESOLUTION_3            4000    // Resolution of Incremental Encoder
+#define GEAR_RATIO_3                    1      // if no gears are attached - set to gear ratio to 1
+#define ENCODER_RESOLUTION_3            16384    // Resolution of Incremental Encoder
 
 /* Somanet IFM Internal Configuration:  Specifies the current sensor resolution per Ampere
  *  (DC300_RESOLUTION / DC100_RESOLUTION / OLD_DC300_RESOLUTION) */
@@ -82,7 +81,7 @@
 #if(SENSOR_SELECTION_CODE_3 == HALL)		// PID gains for position control with Hall Sensor
 
 	#define POSITION_Kp_NUMERATOR_3 	 	10000	//Denominator is 10000
-	#define POSITION_Ki_NUMERATOR_3    		42	//Denominator is 10000
+	#define POSITION_Ki_NUMERATOR_3    		100	//Denominator is 10000
 	#define POSITION_Kd_NUMERATOR_3    		0	//Denominator is 10000
 
 	#define MAX_POSITION_LIMIT_3 			POLE_PAIRS_3*HALL_POSITION_INTERPOLATED_RANGE*GEAR_RATIO_3	// ticks (max range: 2^30, limited for safe operation)

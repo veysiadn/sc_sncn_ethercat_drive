@@ -7,6 +7,7 @@
 #include <ctrlproto_m.h>
 #include <ecrt.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <signal.h>
 #include <stdbool.h>
 #include <profile.h>
@@ -17,6 +18,7 @@
 #include "ethercat_setup.h"
 #include "user_application.h"
 #include <gtk/gtk.h>
+
 
 enum {ECAT_SLAVE_0=0, ECAT_SLAVE_1, ECAT_SLAVE_2};
 
@@ -67,7 +69,7 @@ void init_params(t_slave_data params[], int len)
         params[slave].zero_pos = 0;
         params[slave].start_pos = 0;
         params[slave].end_pos = 0;
-        params[slave].target_pos = 16000;
+        params[slave].target_pos = 8000;
         params[slave].act_velocity = 0;
         params[slave].act_torque = 0.0;
         params[slave].steps = 0;
@@ -87,12 +89,14 @@ int main()
     ECat_parameters ui_params;
 
     t_slave_data slave_main_params[3] = {slave_1, slave_2, slave_3};
-    bool absolute_position_taken = false;
+    bool absolute_position_taken = false,
+         calc_start_pos = false;
     int node, delay_inc;
+
 
     pthread_t user_application_thread;
 
-    ui_params.target_position = 16000; // ticks
+    ui_params.target_position = 8000; // ticks
     ui_params.acceleration = 20; // rpm/s
     ui_params.deceleration = 20; // rpm/s
     ui_params.velocity = 20; // rpm
@@ -147,6 +151,9 @@ int main()
     /* Moving one rotation back and forth */
     while(1)
     {
+        if (break_loop)
+            break;
+
         pthread_mutex_lock(&(ui_params.lock));
 
         if (ui_params.flag)
@@ -193,7 +200,8 @@ int main()
 
                     /* Compute steps needed for the target position */
                     slave_main_params[node].steps = init_position_profile_params(slave_main_params[node].target_pos, slave_main_params[node].act_pos,
-                                slave_main_params[node].velocity, slave_main_params[node].acc, slave_main_params[node].dec, slave_main_params[node].slave_num, slv_handles);
+                                slave_main_params[node].velocity, slave_main_params[node].acc, slave_main_params[node].dec,
+                                slave_main_params[node].slave_num, slv_handles);
 
 //                        printf("\rdrive %d: steps %d target_position %d actual_position %d                                    ",
 //                                slave_main_params[node].slave_num+1, slave_main_params[node].steps, slave_main_params[node].target_pos, slave_main_params[node].act_pos);
@@ -209,7 +217,7 @@ int main()
 
                     /* Send target position for the node specified by slave_number */
                     set_position_ticks(slave_main_params[node].next_target_pos, slave_main_params[node].slave_num, slv_handles);
-                    slave_main_params[node].inc_steps = slave_main_params[node].inc_steps + 1;
+                    slave_main_params[node].inc_steps++;
 
                     /* Read actual node sensor values */
                     slave_main_params[node].act_pos = get_position_actual_ticks(slave_main_params[node].slave_num, slv_handles);
@@ -226,7 +234,6 @@ int main()
                     {
                         slave_main_params[node].direction *= -1;
                         slave_main_params[node].new_target = true;
-//                        printf("New target x: %d", slave_main_params[node].direction* slave_main_params[node].target_pos);
                         slave_main_params[node].inc_steps = 1;
                         delay_inc = 0;
                     }
@@ -234,54 +241,64 @@ int main()
             }
             //printf("\r");
         }
-        else if (break_loop) {
-            break;
-        }
-
     }
+
     break_loop = false;
+    while (delay_inc < 1000000000){delay_inc++;}
 
     printf("\nReturn to start position\n");
     /* return to start position */
-    while ( ((slave_main_params[ECAT_SLAVE_0].act_pos - slave_main_params[ECAT_SLAVE_0].start_pos) > 200
-            || (slave_main_params[ECAT_SLAVE_0].act_pos - slave_main_params[ECAT_SLAVE_0].start_pos) < -200)
-         && ((slave_main_params[ECAT_SLAVE_1].act_pos - slave_main_params[ECAT_SLAVE_1].start_pos) > 200
-            || (slave_main_params[ECAT_SLAVE_1].act_pos - slave_main_params[ECAT_SLAVE_1].start_pos) < -200)
-         && ((slave_main_params[ECAT_SLAVE_2].act_pos - slave_main_params[ECAT_SLAVE_2].start_pos) > 200
-            || (slave_main_params[ECAT_SLAVE_2].act_pos - slave_main_params[ECAT_SLAVE_2].start_pos) < -200))
+    while ( ((slave_main_params[ECAT_SLAVE_0].act_pos - slave_main_params[ECAT_SLAVE_0].start_pos) > 100
+            || (slave_main_params[ECAT_SLAVE_0].act_pos - slave_main_params[ECAT_SLAVE_0].start_pos) < -100)
+         && ((slave_main_params[ECAT_SLAVE_1].act_pos - slave_main_params[ECAT_SLAVE_1].start_pos) > 100
+            || (slave_main_params[ECAT_SLAVE_1].act_pos - slave_main_params[ECAT_SLAVE_1].start_pos) < -100)
+         && ((slave_main_params[ECAT_SLAVE_2].act_pos - slave_main_params[ECAT_SLAVE_2].start_pos) > 100
+            || (slave_main_params[ECAT_SLAVE_2].act_pos - slave_main_params[ECAT_SLAVE_2].start_pos) < -100))
     {
         if (break_loop)
             break;
 
-        pthread_mutex_lock(&(ui_params.lock));
-        if (ui_params.flag)
+        if (!calc_start_pos)
         {
-            /* Compute steps needed for the target position */
-            slave_main_params[ui_params.slave].steps = init_position_profile_params(slave_main_params[ui_params.slave].start_pos,
-                    slave_main_params[ui_params.slave].act_pos, ui_params.velocity, ui_params.acceleration,
-                    ui_params.deceleration, ui_params.slave, slv_handles);
-            ui_params.flag = false;
+            for (node=0; node < TOTAL_NUM_OF_SLAVES; node++)
+            {
+                slave_main_params[node].act_pos = get_position_actual_ticks(slave_main_params[node].slave_num, slv_handles);
+                slave_main_params[node].act_velocity = get_velocity_actual_rpm(slave_main_params[node].slave_num, slv_handles);
+                slave_main_params[node].act_torque = get_torque_actual_mNm(slave_main_params[node].slave_num, slv_handles);
+
+                printf("Slave %d; Act_pos: %d, Start Pos: %d\n", node, slave_main_params[node].act_pos, slave_main_params[node].start_pos);
+
+                /* Compute steps needed for the target position */
+                slave_main_params[node].steps = init_position_profile_params(slave_main_params[node].start_pos,
+                        slave_main_params[node].act_pos, slave_main_params[node].velocity, slave_main_params[node].acc,
+                        slave_main_params[node].dec, node, slv_handles);
+                slave_main_params[node].inc_steps = 1;
+            }
+            calc_start_pos = true;
         }
 
-        pthread_mutex_unlock(&(ui_params.lock));
+        pdo_handle_ecat(&master_setup, slv_handles, TOTAL_NUM_OF_SLAVES);
 
-        for (node=0; node < TOTAL_NUM_OF_SLAVES; node++)
+        if (master_setup.op_flag) /*Check if the master is active*/
         {
-            if(slave_main_params[node].inc_steps < slave_main_params[node].steps)
+            for (node=0; node < TOTAL_NUM_OF_SLAVES; node++)
             {
-                /* Generate target position steps */
-                slave_main_params[node].next_target_pos = generate_profile_position(slave_main_params[node].inc_steps, slave_main_params[node].slave_num, slv_handles);
+                if(slave_main_params[node].inc_steps < slave_main_params[node].steps)
+                {
+                    /* Generate target position steps */
+                    slave_main_params[node].next_target_pos = generate_profile_position(slave_main_params[node].inc_steps,
+                            slave_main_params[node].slave_num, slv_handles);
+                    //printf("Next Target Pos %d: %d\n", node, slave_main_params[node].act_pos);
+                    /* Send target position for the node specified by slave_number */
+                    set_position_ticks(slave_main_params[node].next_target_pos, slave_main_params[node].slave_num, slv_handles);
 
-                /* Send target position for the node specified by slave_number */
-                set_position_ticks(slave_main_params[node].next_target_pos, slave_main_params[node].slave_num, slv_handles);
-                slave_main_params[node].inc_steps++;
+                    /* Read actual node sensor values */
+                    slave_main_params[node].act_pos = get_position_actual_ticks(slave_main_params[node].slave_num, slv_handles);
+                    slave_main_params[node].act_velocity = get_velocity_actual_rpm(slave_main_params[node].slave_num, slv_handles);
+                    slave_main_params[node].act_torque = get_torque_actual_mNm(slave_main_params[node].slave_num, slv_handles);
 
-                /* Read actual node sensor values */
-                slave_main_params[node].act_pos = get_position_actual_ticks(slave_main_params[node].slave_num,
-                        slv_handles);
-                slave_main_params[node].act_velocity = get_velocity_actual_rpm(slave_main_params[node].slave_num,
-                        slv_handles);
-                slave_main_params[node].act_torque = get_torque_actual_mNm(slave_main_params[node].slave_num, slv_handles);
+                    slave_main_params[node].inc_steps++;
+                }
             }
         }
     }

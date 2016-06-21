@@ -20,16 +20,16 @@
  * If you have any gears added, specify gear-ratio
  * and any additional encoders attached specify encoder resolution here (Mandatory)
  */
-#define GEAR_RATIO_1 				1		// if no gears are attached - set to gear ratio to 1
-#define ENCODER_RESOLUTION_1          		16384            // Resolution of Incremental Encoder
+#define GEAR_RATIO_1 				    1		// if no gears are attached - set to gear ratio to 1
+#define ENCODER_RESOLUTION_1          	16384            // Resolution of Incremental Encoder
 
 /* Somanet IFM Internal Configuration:  Specifies the current sensor resolution per Ampere
  *  (DC300_RESOLUTION / DC100_RESOLUTION / OLD_DC300_RESOLUTION) */
-#define IFM_RESOLUTION_1			DC100_RESOLUTION
+#define IFM_RESOLUTION_1			    DC100_RESOLUTION
 
 /* Position Sensor Types (select your sensor type here)
  * (HALL/ QEI_WITH_INDEX/ QEI_NO_INDEX) */
-#define SENSOR_SELECTION_CODE_1          	AMS_SENSOR
+#define SENSOR_SELECTION_CODE_1         AMS_SENSOR
 
 /* Polarity is used to keep all position sensors to count ticks in the same direction
  *  (QEI_POLARITY_NORMAL/QEI_POLARITY_INVERTED) */
@@ -40,7 +40,7 @@
 #define COMMUTATION_OFFSET_CCLK_1		854
 
 /* Motor Winding type (STAR_WINDING/DELTA_WINDING) */
-#define WINDING_TYPE_1				STAR_WINDING
+#define WINDING_TYPE_1				    STAR_WINDING
 
 /* Specify Switch Types (ACTIVE_HIGH/ACTIVE_LOW) when switch is closed
  * (Only if you have any limit switches in the system for safety/homing ) */
@@ -48,7 +48,7 @@
 
 /* Define Homing method (HOMING_POSITIVE_SWITCH/HOMING_NEGATIVE_SWITCH)
  * this specifies direction for the motor to find the home switch */
-#define HOMING_METHOD_1                 	HOMING_NEGATIVE_SWITCH
+#define HOMING_METHOD_1                 HOMING_NEGATIVE_SWITCH
 
 /* Changes direction of the motor drive  (1 /-1) */
 #define POLARITY_1 						1
@@ -81,8 +81,8 @@
 	 * Note: DENOMINATOR is defined as 10000 to give ranges */
 #if(SENSOR_SELECTION_CODE_1 == HALL_SENSOR)		// PID gains for position control with Hall Sensor
 
-	#define POSITION_Kp_NUMERATOR_1 	 	1000	//Denominator is 10000
-	#define POSITION_Ki_NUMERATOR_1    		1	//Denominator is 10000
+	#define POSITION_Kp_NUMERATOR_1 	 	10000	//Denominator is 10000
+	#define POSITION_Ki_NUMERATOR_1    		100	//Denominator is 10000
 	#define POSITION_Kd_NUMERATOR_1    		0	//Denominator is 10000
 
 	#define MAX_POSITION_LIMIT_1 			POLE_PAIRS_1*HALL_POSITION_INTERPOLATED_RANGE*GEAR_RATIO_1	// ticks (max range: 2^30, limited for safe operation)
