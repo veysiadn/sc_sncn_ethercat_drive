@@ -3,6 +3,12 @@
 #include <stdbool.h>
 #include "user_application.h"
 
+typedef struct t_ui_params {
+    int velocity;
+    int acceleration;
+    int deceleration;
+    int target;
+} t_ui_params;
 
 void print_help(void)
 {
@@ -23,15 +29,13 @@ void print_help(void)
 void *user_application(void *param)
 {
     ECat_parameters *parameters =  (ECat_parameters*) param;
-    int velocity = 20;
-    int acceleration = 20;
-    int deceleration = 20;
-    int target = 10000;
     int slave = 0;
     int value;
     int sign;
     char mode;
     char c;
+
+    t_ui_params ui_params[3];
 
     printf("\n*** Interactive Mode ***\n");
 
@@ -68,39 +72,40 @@ void *user_application(void *param)
 
             case 'v':
             {
-                velocity = value*sign;
-                printf("New velocity: %d\n", velocity);
+                ui_params[slave].velocity = value*sign;
+                printf("New velocity: %d\n", ui_params[slave].velocity);
             }
             break;
 
         /*Prepare a new acceleration update*/
             case 'a':
             {
-                acceleration = value*sign;
-                printf("New acceleration: %d\n", acceleration);
+                ui_params[slave].acceleration = value*sign;
+                printf("New acceleration: %d\n", ui_params[slave].acceleration);
             }
             break;
 
             /*Prepare a new decelerration update*/
             case 'd':
             {
-                deceleration = value*sign;
-                printf("New deceleration: %d\n", deceleration);
+                ui_params[slave].deceleration = value*sign;
+                printf("New deceleration: %d\n", ui_params[slave].deceleration);
             }
             break;
 
             /*Prepare a new target position update*/
             case 't':
             {
-                target = value*sign;
-                printf("New target position: %d\n", target);
+                ui_params[slave].target = value*sign;
+                printf("New target position: %d\n", ui_params[slave].target);
             }
             break;
 
             /*Print the content of the LOCAL variables*/
             case 'l':
             {
-                printf("Variables to commit:\nslave=%d\nvelocity=%d\nacceleration=%d\ndeceleration=%d\ntarget=%d\n", slave, velocity, acceleration, deceleration, target);
+                printf("Variables to commit:\nslave=%d\nvelocity=%d\nacceleration=%d\ndeceleration=%d\ntarget=%d\n", slave,
+                        ui_params[slave].velocity, ui_params[slave].acceleration, ui_params[slave].deceleration, ui_params[slave].target);
             }
             break;
 
@@ -129,10 +134,10 @@ void *user_application(void *param)
                 {
                     if(pthread_mutex_trylock(&(parameters->lock)) == 0)
                     {
-                        parameters->velocity = velocity;
-                        parameters->acceleration = acceleration;
-                        parameters->deceleration = deceleration;
-                        parameters->target_position = target;
+                        parameters->velocity = ui_params[slave].velocity;
+                        parameters->acceleration = ui_params[slave].acceleration;
+                        parameters->deceleration = ui_params[slave].deceleration;
+                        parameters->target_position = ui_params[slave].target;
                         parameters->slave = slave;
                         parameters->flag = true;
                         printf("Parameters updated\n");

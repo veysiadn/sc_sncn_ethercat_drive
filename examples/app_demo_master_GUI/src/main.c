@@ -93,6 +93,8 @@ int main()
          calc_start_pos = false;
     int node, delay_inc;
 
+    int target, acceleration, deceleration, velocity;
+
 
     pthread_t user_application_thread;
 
@@ -158,17 +160,16 @@ int main()
 
         if (ui_params.flag)
         {
+            target = ui_params.target_position > 0? ui_params.target_position:target;
+            velocity = ui_params.velocity > 0? ui_params.velocity:velocity;
+            deceleration = ui_params.deceleration > 0? ui_params.deceleration:deceleration;
+            acceleration = ui_params.acceleration > 0? ui_params.acceleration:acceleration;
             /* Compute a target position */
             slave_main_params[ui_params.slave].target_pos = slave_main_params[ui_params.slave].start_pos + slave_main_params[ui_params.slave].direction
-                    * ui_params.target_position;
-
-//            /* Compute steps needed for the target position */
-//            slave_main_params[ui_params.slave].steps = init_position_profile_params(slave_main_params[ui_params.slave].relative_target_pos,
-//                    slave_main_params[ui_params.slave].act_pos, ui_params.velocity, ui_params.acceleration,
-//                    ui_params.deceleration, ui_params.slave, slv_handles);
-            slave_main_params[ui_params.slave].velocity = ui_params.velocity;
-            slave_main_params[ui_params.slave].acc = ui_params.acceleration;
-            slave_main_params[ui_params.slave].dec = ui_params.deceleration;
+                    * target;
+            slave_main_params[ui_params.slave].velocity = velocity;
+            slave_main_params[ui_params.slave].acc = acceleration;
+            slave_main_params[ui_params.slave].dec = deceleration;
 
             ui_params.flag = false;
         }
@@ -270,8 +271,7 @@ int main()
 
                 /* Compute steps needed for the target position */
                 slave_main_params[node].steps = init_position_profile_params(slave_main_params[node].start_pos,
-                        slave_main_params[node].act_pos, slave_main_params[node].velocity, slave_main_params[node].acc,
-                        slave_main_params[node].dec, node, slv_handles);
+                        slave_main_params[node].act_pos, 20, 20, 20, node, slv_handles);
                 slave_main_params[node].inc_steps = 1;
             }
             calc_start_pos = true;
