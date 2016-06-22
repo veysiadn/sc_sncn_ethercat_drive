@@ -7,7 +7,8 @@ typedef struct t_ui_params {
     int velocity;
     int acceleration;
     int deceleration;
-    int target;
+    int end_pos1;
+    int end_pos2;
 } t_ui_params;
 
 void print_help(void)
@@ -16,7 +17,8 @@ void print_help(void)
     printf("\tv: New velocity\n");
     printf("\ta: New acceleration\n");
     printf("\td: New Deceleration\n");
-    printf("\tt: New target position\n");
+    printf("\ts: New end 1 position\n");
+    printf("\te: New end 2 position\n");
     printf("\tp: Print the EtherCAT variables\n");
     printf("\tl: Print the local variables\n");
     printf("\tc: Commit the variables to the EtherCAT thread\n");
@@ -93,19 +95,27 @@ void *user_application(void *param)
             }
             break;
 
-            /*Prepare a new target position update*/
-            case 't':
+            /*Prepare a new start position update*/
+            case 's':
             {
-                ui_params[slave].target = value*sign;
-                printf("New target position: %d\n", ui_params[slave].target);
+                ui_params[slave].end_pos1 = value*sign;
+                printf("New end position 1: %d\n", ui_params[slave].end_pos1);
             }
             break;
+
+            /*Prepare a new end position update*/
+             case 'e':
+             {
+                 ui_params[slave].end_pos2 = value*sign;
+                 printf("New end position 2: %d\n", ui_params[slave].end_pos2);
+             }
+             break;
 
             /*Print the content of the LOCAL variables*/
             case 'l':
             {
-                printf("Variables to commit:\nslave=%d\nvelocity=%d\nacceleration=%d\ndeceleration=%d\ntarget=%d\n", slave,
-                        ui_params[slave].velocity, ui_params[slave].acceleration, ui_params[slave].deceleration, ui_params[slave].target);
+                printf("Variables to commit:\nslave: %d\nvelocity: %d\nacceleration: %d\ndeceleration: %d\nend position 1: %d\nend position 2: %d\n", slave,
+                        ui_params[slave].velocity, ui_params[slave].acceleration, ui_params[slave].deceleration, ui_params[slave].end_pos1, ui_params[slave].end_pos2);
             }
             break;
 
@@ -117,8 +127,8 @@ void *user_application(void *param)
                 {
                     if(pthread_mutex_trylock(&(parameters->lock)) == 0)
                     {
-                        printf("Current parameters:\nslave=%d\nvelocity=%d\nacceleration=%d\ndeceleration=%d\ntarget=%d\n",
-                                parameters->slave, parameters->velocity, parameters->acceleration, parameters->deceleration, parameters->target_position);
+                        printf("Current parameters:\nslave: %d\nvelocity: %d\nacceleration: %d\ndeceleration: %d\nend position 1: %d\nend position 2: %d\n",
+                                parameters->slave, parameters->velocity, parameters->acceleration, parameters->deceleration, parameters->end_pos1, parameters->end_pos2);
                         doing = 0;
                         pthread_mutex_unlock(&(parameters->lock));
                     }
@@ -137,7 +147,8 @@ void *user_application(void *param)
                         parameters->velocity = ui_params[slave].velocity;
                         parameters->acceleration = ui_params[slave].acceleration;
                         parameters->deceleration = ui_params[slave].deceleration;
-                        parameters->target_position = ui_params[slave].target;
+                        parameters->end_pos1 = ui_params[slave].end_pos1;
+                        parameters->end_pos2 = ui_params[slave].end_pos2;
                         parameters->slave = slave;
                         parameters->flag = true;
                         printf("Parameters updated\n");

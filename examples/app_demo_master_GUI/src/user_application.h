@@ -10,7 +10,8 @@
 typedef struct {
 
     int slave;
-    int target_position;
+    int end_pos1;
+    int end_pos2;
     int acceleration;
     int deceleration;
     int velocity;
