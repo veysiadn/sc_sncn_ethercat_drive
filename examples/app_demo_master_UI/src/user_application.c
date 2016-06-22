@@ -176,7 +176,8 @@ void *user_application(void *param)
 
             default:
             {
-                printf("Unknown command please try again\n");
+                printf("Unknown command please try again\n\n");
+                print_help();
             }
             break;
         }
