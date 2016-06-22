@@ -60,7 +60,7 @@ void *user_application(void *param)
         {
             case 'n':
             {
-                if (slave >= 3)
+                if (value >= 3)
                     printf("Wrong slave number\n");
                 else
                 {
