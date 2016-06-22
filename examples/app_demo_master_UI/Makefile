@@ -88,7 +88,7 @@ user_application.o: $(SDIR)/user_application.c
 	gcc -c $(SDIR)/user_application.c $(LIBS) $(INCLUDE_DIRS) $(LIB_DIRS) $(FLAGS) -o $(ODIR)/user_application.o
 
 clean:
-	rm -f $(BINDIR)/$(notdir $(shell pwd))
+	rm -rf $(BINDIR)/
 	rm -f $(ODIR)/*
 
 

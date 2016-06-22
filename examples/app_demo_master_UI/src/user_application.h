@@ -7,6 +7,12 @@
 #include <string.h>
 #include <pthread.h>
 
+#define PRINT_BOLD  "\033[1m"
+#define PRINT_END   "\033[0m"
+#define PRINT_OK    "\033[92m"
+#define PRINT_FAIL  "\033[91m"
+
+
 typedef struct {
 
     int slave;
