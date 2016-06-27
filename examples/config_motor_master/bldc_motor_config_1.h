@@ -81,7 +81,7 @@
 	 * Note: DENOMINATOR is defined as 10000 to give ranges */
 #if(SENSOR_SELECTION_CODE_1 == HALL_SENSOR)		// PID gains for position control with Hall Sensor
 
-	#define POSITION_Kp_NUMERATOR_1 	 	150000	//Denominator is 10000
+	#define POSITION_Kp_NUMERATOR_1 	 	120000	//Denominator is 10000
 	#define POSITION_Ki_NUMERATOR_1    		10	//Denominator is 10000
 	#define POSITION_Kd_NUMERATOR_1    		20000	//Denominator is 10000
 
@@ -89,8 +89,8 @@
 	#define MIN_POSITION_LIMIT_1			-POLE_PAIRS_1*HALL_POSITION_INTERPOLATED_RANGE*GEAR_RATIO_1	// ticks (min range: -2^30, limited for safe operation)
 
 #else // PID gains for position control with other Encoders
-	#define POSITION_Kp_NUMERATOR_1         150000	//Denominator is 10000
-	#define POSITION_Ki_NUMERATOR_1         10	//Denominator is 10000
+	#define POSITION_Kp_NUMERATOR_1         400000	//Denominator is 10000
+	#define POSITION_Ki_NUMERATOR_1         400	//Denominator is 10000
 	#define POSITION_Kd_NUMERATOR_1         20000	//Denominator is 10000
 
 	#define MAX_POSITION_LIMIT_1            0x7fffffff       // ticks (max range: 2^30, limited for safe operation)

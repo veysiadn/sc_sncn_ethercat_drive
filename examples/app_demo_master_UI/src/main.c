@@ -81,6 +81,18 @@ void init_params(t_slave_data params[], int len)
         params[slave].relative_target_pos = 0;
         params[slave].new_target = true;
     }
+
+    params[ECAT_SLAVE_0].acc = 5;
+    params[ECAT_SLAVE_0].dec = 5;
+    params[ECAT_SLAVE_0].velocity = 25;
+
+    params[ECAT_SLAVE_1].acc = 20;
+    params[ECAT_SLAVE_1].dec = 20;
+    params[ECAT_SLAVE_1].velocity = 20;
+
+    params[ECAT_SLAVE_2].acc = 20;
+    params[ECAT_SLAVE_2].dec = 20;
+    params[ECAT_SLAVE_2].velocity = 20;
 }
 
 void set_next_profile_step(t_slave_data * slave_data)
@@ -301,7 +313,7 @@ int main()
         slave_main_params[node].act_velocity = get_velocity_actual_rpm(slave_main_params[node].slave_num, slv_handles);
         slave_main_params[node].act_torque = get_torque_actual_mNm(slave_main_params[node].slave_num, slv_handles);
 
-        printf("Slave %d; Act_pos: %d, Start Pos: %d\n", node, slave_main_params[node].act_pos, slave_main_params[node].zero_pos);
+        printf("Slave %d; Act_pos: %d, Zero Pos: %d\n", node, slave_main_params[node].act_pos, slave_main_params[node].zero_pos);
     }
 
     printf("\n");
