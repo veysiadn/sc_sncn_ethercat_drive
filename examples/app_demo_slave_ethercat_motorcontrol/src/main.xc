@@ -22,7 +22,7 @@
 #include <torque_control.h>
 
 //Position control + profile libs
-#include <position_ctrl_service.h>
+#include <new_position_ctrl_service.h>
 #include <profile_control.h>
 
 // Please configure your slave's default motorcontrol parameters in config_motor_slave/user_config.h.
@@ -112,38 +112,20 @@ int main(void)
             {
                 /* Position Control Loop */
                 {
-                     PosVelocityControlConfig pos_velocity_ctrl_config;
-
-                     pos_velocity_ctrl_config.control_loop_period = CONTROL_LOOP_PERIOD; //us
-
-                     pos_velocity_ctrl_config.int21_min_position = MIN_POSITION_LIMIT;       /* Set by Object Dictionary value! */
-                     pos_velocity_ctrl_config.int21_max_position =  MAX_POSITION_LIMIT;      /* Set by Object Dictionary value! */
-                     pos_velocity_ctrl_config.int21_max_speed = MAX_SPEED;                /* Set by OD: CIA402_MOTOR_SPECIFIC subindex 4 */
-                     pos_velocity_ctrl_config.int21_max_torque = TORQUE_CONTROL_LIMIT;       /* Set by Object Dictionary value CIA402_MAX_TORQUE */
-
-                     pos_velocity_ctrl_config.int10_P_position = POSITION_Kp;    /* Set by OD: CIA402_POSITION_GAIN subindex 1 */
-                     pos_velocity_ctrl_config.int10_I_position = POSITION_Ki;    /* Set by OD: CIA402_POSITION_GAIN subindex 2 */
-                     pos_velocity_ctrl_config.int10_D_position = POSITION_Kd;    /* Set by OD: CIA402_POSITION_GAIN subindex 3 */
-                     pos_velocity_ctrl_config.int21_P_error_limit_position = POSITION_P_ERROR_lIMIT;
-                     pos_velocity_ctrl_config.int21_I_error_limit_position = POSITION_I_ERROR_lIMIT;
-                     pos_velocity_ctrl_config.int22_integral_limit_position = POSITION_INTEGRAL_LIMIT;
-                     //pos_velocity_ctrl_config.int32_cmd_limit_position = 15000;
-
-                     pos_velocity_ctrl_config.int10_P_velocity = VELOCITY_Kp; /* Set by OD: CIA_VELOCITY_GAIN si: 1 */
-                     pos_velocity_ctrl_config.int10_I_velocity = VELOCITY_Ki; /* Set by OD: CIA_VELOCITY_GAIN si: 2 */
-                     pos_velocity_ctrl_config.int10_D_velocity = VELOCITY_Kd; /* Set by OD: CIA_VELOCITY_GAIN si: 3 */
-                     pos_velocity_ctrl_config.int21_P_error_limit_velocity = VELOCITY_P_ERROR_lIMIT;
-                     pos_velocity_ctrl_config.int21_I_error_limit_velocity = VELOCITY_I_ERROR_lIMIT;
-                     pos_velocity_ctrl_config.int22_integral_limit_velocity = VELOCITY_INTEGRAL_LIMIT;
-                     //pos_velocity_ctrl_config.int32_cmd_limit_velocity = 200000;
-
-                     pos_velocity_ctrl_config.position_ref_fc = POSITION_REF_FC;
-                     pos_velocity_ctrl_config.position_fc = POSITION_FC;
-                     pos_velocity_ctrl_config.velocity_ref_fc = VELOCITY_REF_FC;
-                     pos_velocity_ctrl_config.velocity_fc = VELOCITY_FC;
-                     pos_velocity_ctrl_config.velocity_d_fc = VELOCITY_D_FC;
-
-                     position_velocity_control_service(pos_velocity_ctrl_config, i_motorcontrol[1], i_position_control);
+                    PosVelocityControlConfig pos_velocity_control_config;
+                    pos_velocity_control_config.int10_P_position = 1000;// Kp/10000
+                    pos_velocity_control_config.int10_I_position = 5;
+                    pos_velocity_control_config.int10_D_position = 0;
+                    pos_velocity_control_config.int10_P_velocity = 3000;// Kp/10000
+                    pos_velocity_control_config.int10_I_velocity = 0;
+                    pos_velocity_control_config.int10_D_velocity = 0;
+                    pos_velocity_control_config.int22_integral_limit_position = 100000;
+                    pos_velocity_control_config.int22_integral_limit_velocity = 100000;
+                    pos_velocity_control_config.int21_max_torque = MAXIMUM_TORQUE;
+                    pos_velocity_control_config.int21_max_speed = 1000;
+                    pos_velocity_control_config.int21_min_position = MIN_POSITION_LIMIT;
+                    pos_velocity_control_config.int21_max_position = MAX_POSITION_LIMIT;
+                    new_position_velocity_control_service(pos_velocity_control_config, i_motorcontrol[1], i_position_control);
                 }
             }
         }
