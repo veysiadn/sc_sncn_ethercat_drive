@@ -125,6 +125,7 @@ int main(void)
                     pos_velocity_control_config.int21_max_speed = 1000;
                     pos_velocity_control_config.int21_min_position = MIN_POSITION_LIMIT;
                     pos_velocity_control_config.int21_max_position = MAX_POSITION_LIMIT;
+                    pos_velocity_control_config.int21_I_error_limit_position = 1;
                     new_position_velocity_control_service(pos_velocity_control_config, i_motorcontrol[1], i_position_control);
                 }
             }
