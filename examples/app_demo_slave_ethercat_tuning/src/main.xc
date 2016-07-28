@@ -54,7 +54,7 @@ int main(void)
     interface ADCInterface i_adc[2];
     interface update_pwm i_update_pwm;
     interface MotorcontrolInterface i_motorcontrol[4];
-    interface PositionVelocityCtrlInterface i_position_control[3];
+    interface PositionVelocityCtrlInterface i_position_control[1];
     interface PositionFeedbackInterface i_position_feedback[3];
     interface shared_memory_interface i_shared_memory[2];
     interface PositionLimiterInterface i_position_limiter;
@@ -85,44 +85,28 @@ int main(void)
             profiler_config.max_velocity = MAX_SPEED;
             profiler_config.max_acceleration = MAX_ACCELERATION;
             profiler_config.max_deceleration = MAX_DECELERATION;
-            run_offset_tuning(profiler_config, i_motorcontrol[1], i_position_control[0], i_position_feedback[0], i_position_limiter, pdo_out, pdo_in, i_coe);
+            run_offset_tuning(profiler_config, i_motorcontrol[2], i_position_control[0], i_position_feedback[0], i_position_limiter, pdo_out, pdo_in, i_coe);
         }
 
 
         on tile[APP_TILE_2]:
         /* Position Control Loop */
         {
-            PosVelocityControlConfig pos_velocity_ctrl_config;
-            /* Control Loop */
-            pos_velocity_ctrl_config.control_loop_period = CONTROL_LOOP_PERIOD; //us
-
-            pos_velocity_ctrl_config.int21_min_position = MIN_POSITION_LIMIT;
-            pos_velocity_ctrl_config.int21_max_position = MAX_POSITION_LIMIT;
-            pos_velocity_ctrl_config.int21_max_speed = MAX_SPEED;
-            pos_velocity_ctrl_config.int21_max_torque = TORQUE_CONTROL_LIMIT;
-
-
-            pos_velocity_ctrl_config.int10_P_position = POSITION_Kp;
-            pos_velocity_ctrl_config.int10_I_position = POSITION_Ki;
-            pos_velocity_ctrl_config.int10_D_position = POSITION_Kd;
-            pos_velocity_ctrl_config.int21_P_error_limit_position = POSITION_P_ERROR_lIMIT;
-            pos_velocity_ctrl_config.int21_I_error_limit_position = POSITION_I_ERROR_lIMIT;
-            pos_velocity_ctrl_config.int22_integral_limit_position = POSITION_INTEGRAL_LIMIT;
-
-            pos_velocity_ctrl_config.int10_P_velocity = VELOCITY_Kp;
-            pos_velocity_ctrl_config.int10_I_velocity = VELOCITY_Ki;
-            pos_velocity_ctrl_config.int10_D_velocity = VELOCITY_Kd;
-            pos_velocity_ctrl_config.int21_P_error_limit_velocity = VELOCITY_P_ERROR_lIMIT;
-            pos_velocity_ctrl_config.int21_I_error_limit_velocity = VELOCITY_I_ERROR_lIMIT;
-            pos_velocity_ctrl_config.int22_integral_limit_velocity = VELOCITY_INTEGRAL_LIMIT;
-
-            pos_velocity_ctrl_config.position_ref_fc = POSITION_REF_FC;
-            pos_velocity_ctrl_config.position_fc = POSITION_FC;
-            pos_velocity_ctrl_config.velocity_ref_fc = VELOCITY_REF_FC;
-            pos_velocity_ctrl_config.velocity_fc = VELOCITY_FC;
-            pos_velocity_ctrl_config.velocity_d_fc = VELOCITY_D_FC;
-
-            position_velocity_control_service(pos_velocity_ctrl_config, i_motorcontrol[3], i_position_control);
+            PosVelocityControlConfig pos_velocity_control_config;
+            pos_velocity_control_config.int10_P_position = 1000;// Kp/10000
+            pos_velocity_control_config.int10_I_position = 5;
+            pos_velocity_control_config.int10_D_position = 0;
+            pos_velocity_control_config.int10_P_velocity = 500;// Kp/10000
+            pos_velocity_control_config.int10_I_velocity = 0;
+            pos_velocity_control_config.int10_D_velocity = 0;
+            pos_velocity_control_config.int22_integral_limit_position = 100000;
+            pos_velocity_control_config.int22_integral_limit_velocity = 100000;
+            pos_velocity_control_config.int21_max_torque = 2500;
+            pos_velocity_control_config.int21_max_speed = 1000;
+            pos_velocity_control_config.int21_min_position = MIN_POSITION_LIMIT;
+            pos_velocity_control_config.int21_max_position = MAX_POSITION_LIMIT;
+            pos_velocity_control_config.open_brake_delay = 0;
+            new_position_velocity_control_service(pos_velocity_control_config, i_motorcontrol[1], i_position_control);
         }
 
 
@@ -180,6 +164,8 @@ int main(void)
                     motorcontrol_config.torque_constant =  PERCENT_TORQUE_CONSTANT;
                     motorcontrol_config.current_ratio =  CURRENT_RATIO;
                     motorcontrol_config.rated_current =  RATED_CURRENT;
+                    motorcontrol_config.rated_torque  =  RATED_TORQUE;
+                    motorcontrol_config.percent_offset_torque =  PERCENT_OFFSET_TORQUE;
 
                     motorcontrol_config.recuperation = RECUPERATION;
                     motorcontrol_config.battery_e_max = BATTERY_E_MAX;

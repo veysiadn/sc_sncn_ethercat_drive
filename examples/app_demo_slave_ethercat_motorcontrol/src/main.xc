@@ -29,8 +29,8 @@
 // These parameter will be eventually overwritten by the app running on the EtherCAT master
 //#include <user_config.h>
 //#include <user_config_speedy_A1.h>
-#include <user_config_foresight_1.h>
-//#include <user_config_foresight.h>
+//#include <user_config_foresight_1.h>
+#include <user_config_foresight.h>
 
 EthercatPorts ethercat_ports = SOMANET_COM_ETHERCAT_PORTS;
 PwmPorts pwm_ports = SOMANET_IFM_PWM_PORTS;
@@ -47,7 +47,7 @@ int main(void)
     interface MotorcontrolInterface i_motorcontrol[4];
     interface update_pwm i_update_pwm;
     interface shared_memory_interface i_shared_memory[2];
-    interface PositionVelocityCtrlInterface i_position_control[3];
+    interface PositionVelocityCtrlInterface i_position_control[1];
     interface PositionFeedbackInterface i_position_feedback[3];
 
     /* EtherCat Communication channels */
@@ -114,18 +114,18 @@ int main(void)
                 {
                     PosVelocityControlConfig pos_velocity_control_config;
                     pos_velocity_control_config.int10_P_position = 1000;// Kp/10000
-                    pos_velocity_control_config.int10_I_position = 5;
+                    pos_velocity_control_config.int10_I_position = 10;
                     pos_velocity_control_config.int10_D_position = 0;
-                    pos_velocity_control_config.int10_P_velocity = 3000;// Kp/10000
+                    pos_velocity_control_config.int10_P_velocity = 1500;// Kp/10000
                     pos_velocity_control_config.int10_I_velocity = 0;
                     pos_velocity_control_config.int10_D_velocity = 0;
                     pos_velocity_control_config.int22_integral_limit_position = 100000;
                     pos_velocity_control_config.int22_integral_limit_velocity = 100000;
-                    pos_velocity_control_config.int21_max_torque = MAXIMUM_TORQUE;
-                    pos_velocity_control_config.int21_max_speed = 1000;
+                    pos_velocity_control_config.int21_max_torque = 2000;
+                    pos_velocity_control_config.int21_max_speed = 2000;
                     pos_velocity_control_config.int21_min_position = MIN_POSITION_LIMIT;
                     pos_velocity_control_config.int21_max_position = MAX_POSITION_LIMIT;
-                    pos_velocity_control_config.int21_I_error_limit_position = 1;
+                    pos_velocity_control_config.open_brake_delay = 0;
                     new_position_velocity_control_service(pos_velocity_control_config, i_motorcontrol[1], i_position_control);
                 }
             }
@@ -186,6 +186,8 @@ int main(void)
                     motorcontrol_config.torque_constant =  PERCENT_TORQUE_CONSTANT;
                     motorcontrol_config.current_ratio =  CURRENT_RATIO;
                     motorcontrol_config.rated_current =  RATED_CURRENT;
+                    motorcontrol_config.rated_torque  =  RATED_TORQUE;
+                    motorcontrol_config.percent_offset_torque =  PERCENT_OFFSET_TORQUE;
 
                     motorcontrol_config.recuperation = RECUPERATION;
                     motorcontrol_config.battery_e_max = BATTERY_E_MAX;
