@@ -1,7 +1,7 @@
 /* INCLUDE BOARD SUPPORT FILES FROM module_board-support */
 #include <COM_ECAT-rev-a.bsp>
-#include <CORE_C22-rev-a.bsp>
-#include <IFM_BOARD_REQUIRED>
+#include <CORE_C21-G2.bsp>
+#include <IFM_DC1K-rev-c4.bsp>
 
 /**
  * @file test_ethercat-mode.xc
@@ -74,9 +74,9 @@ int main(void)
         on tile[COM_TILE] :
         {
             par {
-                ethercat_service(i_ecat_reboot, i_coe, null,
+                ethercat_service(null, i_coe, null,
                                     i_foe, i_pdo, ethercat_ports);
-                reboot_service_ethercat(i_ecat_reboot);
+                //reboot_service_ethercat(i_ecat_reboot);
             }
         }
 
