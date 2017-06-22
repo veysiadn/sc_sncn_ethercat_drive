@@ -14,7 +14,6 @@ void data_logging_init(client SPIFFSInterface ?i_spiffs)
     int res;
     char log_buf[768];
 
-
     //Trying to open existing LOG file
     file_descriptor = i_spiffs.open_file(LOG_FILE_NAME, strlen(LOG_FILE_NAME), (SPIFFS_RDWR));
     if ((file_descriptor < 0))
@@ -98,8 +97,6 @@ void data_logging_save(client SPIFFSInterface ?i_spiffs, client interface Motion
     ucd.analogue_input_b_2);
 
 
-
-
     res = i_spiffs.write(file_descriptor, log_buf, strlen(log_buf));
     i_spiffs.flush(file_descriptor);
 
@@ -141,7 +138,18 @@ void data_logging_service(
 
         select {
 
-            case !isnull(i_logif) => i_logif[int i].log_user_command(char msg[], unsigned int timestamp) -> unsigned short res:
+            case !isnull(i_logif) => i_logif[int i].log_user_command(void) -> unsigned short res:
+                    char command_buf[128];
+                    UpstreamControlData ucd;
+                    DownstreamControlData dcd;
+                    {ucd, dcd} = i_motion_control.read_control_data();
+
+                    safememset(command_buf, 0, sizeof(command_buf));
+                    sprintf(command_buf, "User command: Position: %d, Velocity %d, Torque: %d, Offset Torque: %d\n", dcd.position_cmd, dcd.velocity_cmd, dcd.torque_cmd, dcd.offset_torque);
+                    res = i_spiffs.write(file_descriptor, command_buf, strlen(command_buf));
+                    i_spiffs.flush(file_descriptor);
+
+                    printintln(res);
 
                 break;
 

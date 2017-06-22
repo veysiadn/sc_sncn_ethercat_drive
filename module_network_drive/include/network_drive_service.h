@@ -13,6 +13,7 @@
 #include <motion_control_service.h>
 #include <position_feedback_service.h>
 
+#include <data_logging_service.h>
 #include <profile_control.h>
 
 /* Set with `-DSTARTUP_READ_FLASH_OBJECTS=1` either in the makefile or at the command line
@@ -38,7 +39,8 @@ void network_drive_service(ProfilerConfig &profiler_config,
                             client interface TorqueControlInterface i_torque_control,
                             client interface MotionControlInterface i_motion_control,
                             client interface PositionFeedbackInterface i_position_feedback_1,
-                            client interface PositionFeedbackInterface ?i_position_feedback_2);
+                            client interface PositionFeedbackInterface ?i_position_feedback_2,
+                            client interface DataLoggingInterface i_logif);
 
 void network_drive_service_debug(ProfilerConfig &profiler_config,
                             client interface i_pdo_handler_exchange i_pdo,

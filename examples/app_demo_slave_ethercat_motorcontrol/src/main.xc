@@ -128,7 +128,7 @@ int main(void)
                             i_pdo,
                             i_co[1],
                             i_torque_control[1],
-                            i_motion_control[0], i_position_feedback_1[0], i_position_feedback_2[0]);
+                            i_motion_control[0], i_position_feedback_1[0], i_position_feedback_2[0], i_logif[0]);
 #endif
                 }
 

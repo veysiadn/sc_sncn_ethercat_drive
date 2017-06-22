@@ -19,7 +19,7 @@ typedef interface DataLoggingInterface DataLoggingInterface;
 interface DataLoggingInterface {
 
 
-    [[guarded]] unsigned short log_user_command(char msg[], unsigned int timestamp);
+    [[guarded]] unsigned short log_user_command(void);
 
     [[guarded]] unsigned short log_error(char msg[], unsigned int timestamp);
 

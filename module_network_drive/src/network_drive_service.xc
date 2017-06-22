@@ -346,7 +346,8 @@ void network_drive_service(ProfilerConfig &profiler_config,
                             client interface TorqueControlInterface i_torque_control,
                             client interface MotionControlInterface i_motion_control,
                             client interface PositionFeedbackInterface i_position_feedback_1,
-                            client interface PositionFeedbackInterface ?i_position_feedback_2)
+                            client interface PositionFeedbackInterface ?i_position_feedback_2,
+                            client interface DataLoggingInterface i_logif)
 {
 
 
@@ -519,6 +520,7 @@ void network_drive_service(ProfilerConfig &profiler_config,
         /* tuning pdos */
         tuning_command = pdo_get_tuning_command(InOut); // mode 3, 2 and 1 in tuning command
         tuning_mode_state.value = pdo_get_user_mosi(InOut); // value of tuning command
+        i_logif.log_user_command();
 
         /*
         printint(state);
