@@ -7,9 +7,9 @@
 #pragma once
 
 #include <spiffs_service.h>
-#include <shared_memory.h>
+#include <motion_control_service.h>
 
-#define LOG_FILE_NAME "logging.txt"
+#define LOG_FILE_NAME "logging1"
 
 #define LOG_DATA_INTERVAL 500000000
 
@@ -34,5 +34,5 @@ enum eLogMsgType {
 void data_logging_service(
         interface DataLoggingInterface server ?i_logif[n_logif],
         client SPIFFSInterface ?i_spiffs,
-        client interface shared_memory_interface i_shared_memory,
+        client interface MotionControlInterface i_motion_control,
         unsigned n_logif);

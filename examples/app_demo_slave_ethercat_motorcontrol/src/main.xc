@@ -1,7 +1,7 @@
 /* INCLUDE BOARD SUPPORT FILES FROM module_board-support */
 #include <COM_ECAT-rev-a.bsp>
 #include <CORE_C21-DX_G2.bsp>
-#include <IFM_BOARD_REQUIRED>
+#include <IFM_DC1K-rev-c4.bsp>
 
 
 /**
@@ -37,6 +37,8 @@
 #include <flash_service.h>
 #include <spiffs_service.h>
 #include <file_service.h>
+
+#include <data_logging_service.h>
 
 EthercatPorts ethercat_ports = SOMANET_COM_ETHERCAT_PORTS;
 PwmPorts pwm_ports = SOMANET_IFM_PWM_PORTS;
@@ -79,6 +81,8 @@ int main(void)
     FlashDataInterface i_data[1];
     SPIFFSInterface i_spiffs[2];
     FlashBootInterface i_boot;
+
+    DataLoggingInterface i_logif[1];
 
 
     par
@@ -136,7 +140,7 @@ int main(void)
             par
             {
                 file_service(i_spiffs[0], i_co[3], i_foe);
-                spiffs_service(i_data[0], i_spiffs, 1);
+                spiffs_service(i_data[0], i_spiffs, 2);
             }
         }
 
@@ -222,6 +226,12 @@ int main(void)
                 /* Watchdog Service */
                 {
                     watchdog_service(wd_ports, i_watchdog, IFM_TILE_USEC);
+
+                }
+
+                /* Data Logging Service */
+                {
+                    data_logging_service(i_logif, i_spiffs[1], i_motion_control[1], 1);
                 }
 
                 /* Motor Control Service */
