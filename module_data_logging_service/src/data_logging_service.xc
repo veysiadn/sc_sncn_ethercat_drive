@@ -7,35 +7,33 @@
 #include <stdlib.h>
 #include <safestring.h>
 
+unsigned char log_timer_active = 0;
 unsigned short file_descriptor;
 unsigned char curr_log_file_no = 0;
-unsigned char log_timer_active = 0;
-unsigned int timer_interval;
-unsigned int max_log_file_size = 15000;
-
-char logging_file_name[2][SPIFFS_MAX_FILENAME_SIZE] = {LOG_FILE_NAME1, LOG_FILE_NAME2};
+DataLoggingConfig Config;
 
 
 int get_config_value(char title[], char end_marker[], char buffer[])
 {
     char * begin_pos;
     char * end_pos;
-    char value_buffer[SPIFFS_MAX_DATA_BUFFER_SIZE];
+    char value_buffer[CONFIG_MAX_STRING_SIZE];
 
-    //just to read opened file size
     int res = 0;
 
     begin_pos = strstr(buffer, title);
-    end_pos =  strstr(buffer,  end_marker);
+    end_pos =  strstr(begin_pos,  end_marker);
 
     if ((!begin_pos)||(!end_pos))
     {
-        printstrln("Config: value not found");
+        printstr("Config: ");
+        printstr(title);
+        printstrln(" not found");
         return -1;
     }
 
-    memset(value_buffer, '\0', SPIFFS_MAX_DATA_BUFFER_SIZE);
-    memcpy(value_buffer, begin_pos + strlen(title), end_pos - (begin_pos  + strlen(end_marker)));
+    memset(value_buffer, '\0', CONFIG_MAX_STRING_SIZE);
+    memcpy(value_buffer, begin_pos + strlen(title), end_pos - (begin_pos  + strlen(title)));
     res = atoi(value_buffer);
 
     memset(begin_pos, ' ', (end_pos - begin_pos) + 1);
@@ -44,8 +42,35 @@ int get_config_value(char title[], char end_marker[], char buffer[])
 }
 
 
+int get_config_string(char title[], char end_marker[], char buffer[], char out_buffer[])
+{
+    char * begin_pos;
+    char * end_pos;
+    char data_buffer[CONFIG_MAX_STRING_SIZE];
 
-int read_log_config(client SPIFFSInterface ?i_spiffs)
+    begin_pos = strstr(buffer, title);
+    end_pos =  strstr(begin_pos,  end_marker);
+
+    if ((!begin_pos)||(!end_pos))
+    {
+        printstr("Config: ");
+        printstr(title);
+        printstrln(" not found");
+        return -1;
+    }
+
+    memset(data_buffer, '\0', SPIFFS_MAX_DATA_BUFFER_SIZE);
+    memcpy(data_buffer, begin_pos + strlen(title), end_pos - (begin_pos  + strlen(title)));
+
+    memset(begin_pos, ' ', (end_pos - begin_pos) + 1);
+    memcpy(out_buffer, data_buffer, strlen(data_buffer));
+
+    return 0;
+}
+
+
+
+int read_log_config(client SPIFFSInterface ?i_spiffs, DataLoggingConfig * config)
 {
     char config_buffer[SPIFFS_MAX_DATA_BUFFER_SIZE];
     int file_size;
@@ -78,16 +103,25 @@ int read_log_config(client SPIFFSInterface ?i_spiffs)
     i_spiffs.close_file(file_descriptor);
     config_buffer[file_size] = CONFIG_END_OF_STRING_MARKER[0];
 
-    timer_interval = get_config_value(CONFIG_INTERVAL_TITLE, CONFIG_END_OF_STRING_MARKER, config_buffer);
+    config->data_timer_interval = get_config_value(CONFIG_DATA_INTERVAL_TITLE, CONFIG_END_OF_STRING_MARKER, config_buffer);
 
-    if (timer_interval < MIN_LOG_INTERVAL)
+    if (config->data_timer_interval < MIN_LOG_INTERVAL)
     {
         printstrln("Config: Incorrect timer interval");
         return -1;
     }
-    timer_interval *= LOG_INTERVAL_MULT;
+    config->data_timer_interval *= LOG_INTERVAL_MULT;
 
-    printintln(get_config_value(CONFIG_LAST_LOG_TITLE, CONFIG_END_OF_STRING_MARKER, config_buffer));
+    config->error_timer_interval = get_config_value(CONFIG_ERROR_LOG_INTERVAL_TITLE, CONFIG_END_OF_STRING_MARKER, config_buffer);
+
+    config->max_log_file_size = get_config_value(CONFIG_LOG_FILE_MAX_TITLE, CONFIG_END_OF_STRING_MARKER, config_buffer);
+
+    config->err_codes_count = get_config_value(CONFIG_ERR_CODES_COUNT, CONFIG_END_OF_STRING_MARKER, config_buffer);
+
+    get_config_string(CONFIG_LOG_FILE_NAME1_TITLE, CONFIG_END_OF_STRING_MARKER, config_buffer, config->log_file_name[0]);
+
+    get_config_string(CONFIG_LOG_FILE_NAME2_TITLE, CONFIG_END_OF_STRING_MARKER, config_buffer, config->log_file_name[1]);
+
 
 
     return 0;
@@ -112,7 +146,7 @@ int open_log_file(client SPIFFSInterface ?i_spiffs, char reset_existing)
     if (file_descriptor > 0) i_spiffs.close_file(file_descriptor);
 
     //Trying to open existing LOG file
-    file_descriptor = i_spiffs.open_file(logging_file_name[curr_log_file_no], strlen(logging_file_name[curr_log_file_no]), flags);
+    file_descriptor = i_spiffs.open_file(Config.log_file_name[curr_log_file_no], strlen(Config.log_file_name[curr_log_file_no]), flags);
     if ((file_descriptor < 0))
     {
         printstrln("Error opening file");
@@ -122,8 +156,8 @@ int open_log_file(client SPIFFSInterface ?i_spiffs, char reset_existing)
     if (file_descriptor > SPIFFS_MAX_FILE_DESCRIPTOR)
     {
             printstr("LOG file not found, creating of new file: ");
-            printstrln(logging_file_name[curr_log_file_no]);
-            file_descriptor = i_spiffs.open_file(logging_file_name[curr_log_file_no], strlen(logging_file_name[curr_log_file_no]), (SPIFFS_CREAT | SPIFFS_TRUNC | SPIFFS_RDWR));
+            printstrln(Config.log_file_name[curr_log_file_no]);
+            file_descriptor = i_spiffs.open_file(Config.log_file_name[curr_log_file_no], strlen(Config.log_file_name[curr_log_file_no]), (SPIFFS_CREAT | SPIFFS_TRUNC | SPIFFS_RDWR));
             if ((file_descriptor < 0)||(file_descriptor > SPIFFS_MAX_FILE_DESCRIPTOR))
             {
                   printstrln("Error opening file");
@@ -152,6 +186,8 @@ int open_log_file(client SPIFFSInterface ?i_spiffs, char reset_existing)
     return 0;
 }
 
+
+
 int check_log_file_size(client SPIFFSInterface ?i_spiffs)
 {
     int res;
@@ -164,7 +200,7 @@ int check_log_file_size(client SPIFFSInterface ?i_spiffs)
         return -1;
     }
 
-    if (res > max_log_file_size)
+    if (res > Config.max_log_file_size)
     {
         if (curr_log_file_no == 0)
             curr_log_file_no = 1;
@@ -173,7 +209,7 @@ int check_log_file_size(client SPIFFSInterface ?i_spiffs)
               curr_log_file_no = 0;
 
         printstr("Switching LOG file to: ");
-        printstrln(logging_file_name[curr_log_file_no]);
+        printstrln(Config.log_file_name[curr_log_file_no]);
 
         if (open_log_file(i_spiffs, 1) != 0)
         {
@@ -188,7 +224,7 @@ int check_log_file_size(client SPIFFSInterface ?i_spiffs)
 int data_logging_init(client SPIFFSInterface ?i_spiffs)
 {
 
-    if (read_log_config(i_spiffs) != 0)
+    if (read_log_config(i_spiffs, &Config) != 0)
     {
         //error in config file
         return -1;
@@ -325,7 +361,7 @@ void data_logging_service(
 
                 break;
 
-            case t when timerafter(time + timer_interval) :> void :
+            case t when timerafter(time + Config.data_timer_interval) :> void :
                     if (log_timer_active)
                     {
                         data_logging_save(i_spiffs, i_motion_control);
