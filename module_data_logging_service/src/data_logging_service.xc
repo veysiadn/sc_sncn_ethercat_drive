@@ -18,13 +18,14 @@ int get_config_value(char title[], char end_marker[], char buffer[])
     char * begin_pos;
     char * end_pos;
     char value_buffer[CONFIG_MAX_STRING_SIZE];
+    int value_str_length;
 
     int res = 0;
 
     begin_pos = strstr(buffer, title);
-    end_pos =  strstr(begin_pos,  end_marker);
-
-    if ((!begin_pos)||(!end_pos))
+    if (begin_pos)
+        end_pos =  strstr(begin_pos,  end_marker);
+    else
     {
         printstr("Config: ");
         printstr(title);
@@ -32,8 +33,15 @@ int get_config_value(char title[], char end_marker[], char buffer[])
         return -1;
     }
 
+    value_str_length = end_pos - (begin_pos  + strlen(title));
+    if (value_str_length >= CONFIG_MAX_STRING_SIZE)
+    {
+        printstrln("Config error: parameter is too large");
+        return -1;
+    }
+
     memset(value_buffer, '\0', CONFIG_MAX_STRING_SIZE);
-    memcpy(value_buffer, begin_pos + strlen(title), end_pos - (begin_pos  + strlen(title)));
+    memcpy(value_buffer, begin_pos + strlen(title), value_str_length);
     res = atoi(value_buffer);
 
     memset(begin_pos, ' ', (end_pos - begin_pos) + 1);
@@ -47,11 +55,12 @@ int get_config_string(char title[], char end_marker[], char buffer[], char out_b
     char * begin_pos;
     char * end_pos;
     char data_buffer[CONFIG_MAX_STRING_SIZE];
+    int data_str_length;
 
     begin_pos = strstr(buffer, title);
-    end_pos =  strstr(begin_pos,  end_marker);
-
-    if ((!begin_pos)||(!end_pos))
+    if (begin_pos)
+        end_pos =  strstr(begin_pos,  end_marker);
+    else
     {
         printstr("Config: ");
         printstr(title);
@@ -59,8 +68,15 @@ int get_config_string(char title[], char end_marker[], char buffer[], char out_b
         return -1;
     }
 
-    memset(data_buffer, '\0', SPIFFS_MAX_DATA_BUFFER_SIZE);
-    memcpy(data_buffer, begin_pos + strlen(title), end_pos - (begin_pos  + strlen(title)));
+    data_str_length = end_pos - (begin_pos  + strlen(title));
+    if (data_str_length >= CONFIG_MAX_STRING_SIZE)
+    {
+         printstrln("Config error: parameter is too large");
+         return -1;
+    }
+
+    memset(data_buffer, '\0', CONFIG_MAX_STRING_SIZE);
+    memcpy(data_buffer, begin_pos + strlen(title), data_str_length);
 
     memset(begin_pos, ' ', (end_pos - begin_pos) + 1);
     memcpy(out_buffer, data_buffer, strlen(data_buffer));
@@ -73,10 +89,12 @@ int get_config_string(char title[], char end_marker[], char buffer[], char out_b
 int read_log_config(client SPIFFSInterface ?i_spiffs, DataLoggingConfig * config)
 {
     char config_buffer[SPIFFS_MAX_DATA_BUFFER_SIZE];
+    char err_title_buf[CONFIG_MAX_STRING_SIZE];
     int file_size;
     int res;
 
     file_descriptor = i_spiffs.open_file(LOG_CONFIG_FILE, strlen(LOG_CONFIG_FILE), SPIFFS_RDONLY);
+
     if (file_descriptor < 0)
     {
         printstrln("Error opening log configuration file");
@@ -97,6 +115,12 @@ int read_log_config(client SPIFFSInterface ?i_spiffs, DataLoggingConfig * config
      }
 
     file_size = i_spiffs.get_file_size(file_descriptor);
+    if (file_size > SPIFFS_MAX_DATA_BUFFER_SIZE)
+    {
+        printstrln("Error opening log configuration file: file is too large");
+        i_spiffs.close_file(file_descriptor);
+        return -1;
+    }
 
     memset(config_buffer, '\0', SPIFFS_MAX_DATA_BUFFER_SIZE);
     res = i_spiffs.read(file_descriptor, config_buffer, file_size);
@@ -122,20 +146,25 @@ int read_log_config(client SPIFFSInterface ?i_spiffs, DataLoggingConfig * config
 
     get_config_string(CONFIG_LOG_FILE_NAME2_TITLE, CONFIG_END_OF_STRING_MARKER, config_buffer, config->log_file_name[1]);
 
-
+    for (int i=0; i < config->err_codes_count; i++)
+    {
+        memset(err_title_buf, '\0', CONFIG_MAX_STRING_SIZE);
+        sprintf(err_title_buf, CONFIG_LOG_ERR_TITLE, i + 1);
+        get_config_string(err_title_buf, CONFIG_END_OF_STRING_MARKER, config_buffer, config->errors_titles[i]);
+    }
 
     return 0;
 
 }
 
 
-int open_log_file(client SPIFFSInterface ?i_spiffs, char reset_existing)
+int open_log_file(client SPIFFSInterface ?i_spiffs, char reset_existing_file)
 {
     int res;
     char log_buf[768];
     unsigned short flags = 0;
 
-    if (reset_existing)
+    if (reset_existing_file)
         //clear existing file
         flags = (SPIFFS_CREAT | SPIFFS_TRUNC | SPIFFS_RDWR);
     else
@@ -188,7 +217,7 @@ int open_log_file(client SPIFFSInterface ?i_spiffs, char reset_existing)
 
 
 
-int check_log_file_size(client SPIFFSInterface ?i_spiffs)
+int check_log_file_size(client SPIFFSInterface ?i_spiffs, char reset_existing_file)
 {
     int res;
 
@@ -211,7 +240,7 @@ int check_log_file_size(client SPIFFSInterface ?i_spiffs)
         printstr("Switching LOG file to: ");
         printstrln(Config.log_file_name[curr_log_file_no]);
 
-        if (open_log_file(i_spiffs, 1) != 0)
+        if (open_log_file(i_spiffs, reset_existing_file) != 0)
         {
             //error opening file
             return -1;
@@ -236,15 +265,13 @@ int data_logging_init(client SPIFFSInterface ?i_spiffs)
         return -1;
     }
 
-    if (check_log_file_size(i_spiffs) != 0)
+    if (check_log_file_size(i_spiffs, 0) != 0)
     {
         //error checking of file
         return -1;
     }
 
-
     return 0;
-
 }
 
 void data_logging_save(client SPIFFSInterface ?i_spiffs, client interface MotionControlInterface i_motion_control)
@@ -364,11 +391,9 @@ void data_logging_service(
             case t when timerafter(time + Config.data_timer_interval) :> void :
                     if (log_timer_active)
                     {
-                        data_logging_save(i_spiffs, i_motion_control);
-
-                        if (check_log_file_size(i_spiffs) != 0)
+                        if (check_log_file_size(i_spiffs, 1) != 0)
                             log_timer_active = 0;
-
+                        data_logging_save(i_spiffs, i_motion_control);
                     }
                     t :> time;
 
