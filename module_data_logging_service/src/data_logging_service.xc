@@ -5,10 +5,10 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <safestring.h>
 
-unsigned char log_timer_active = 0;
-unsigned short file_descriptor;
+unsigned char log_data_timer_active = 0;
+unsigned char log_error_timer_active = 0;
+short file_descriptor;
 unsigned char curr_log_file_no = 0;
 DataLoggingConfig Config;
 
@@ -97,22 +97,22 @@ int read_log_config(client SPIFFSInterface ?i_spiffs, DataLoggingConfig * config
 
     if (file_descriptor < 0)
     {
-        printstrln("Error opening log configuration file");
-        return -1;
-
+        if (file_descriptor == SPIFFS_ERR_NOT_FOUND)
+        {
+            printstrln("Log configuration file file not found ");
+            return -1;
+        }
+        else
+        {
+            printstrln("Error opening log configuration file");
+            return -1;
+        }
     }
     else
-    if (file_descriptor > SPIFFS_MAX_FILE_DESCRIPTOR)
     {
-        printstrln("Log configuration file file not found ");
-        return -1;
-
-     }
-     else
-     {
-         printstr("File opened: ");
-         printintln(file_descriptor);
-     }
+        printstr("File opened: ");
+        printintln(file_descriptor);
+    }
 
     file_size = i_spiffs.get_file_size(file_descriptor);
     if (file_size > SPIFFS_MAX_DATA_BUFFER_SIZE)
@@ -140,17 +140,22 @@ int read_log_config(client SPIFFSInterface ?i_spiffs, DataLoggingConfig * config
 
     config->max_log_file_size = get_config_value(CONFIG_LOG_FILE_MAX_TITLE, CONFIG_END_OF_STRING_MARKER, config_buffer);
 
-    config->err_codes_count = get_config_value(CONFIG_ERR_CODES_COUNT, CONFIG_END_OF_STRING_MARKER, config_buffer);
-
     get_config_string(CONFIG_LOG_FILE_NAME1_TITLE, CONFIG_END_OF_STRING_MARKER, config_buffer, config->log_file_name[0]);
 
     get_config_string(CONFIG_LOG_FILE_NAME2_TITLE, CONFIG_END_OF_STRING_MARKER, config_buffer, config->log_file_name[1]);
 
-    for (int i=0; i < config->err_codes_count; i++)
+    int i = 0;
+    memset(err_title_buf, '\0', CONFIG_MAX_STRING_SIZE);
+    sprintf(err_title_buf, CONFIG_LOG_ERR_TITLE, i + 1);
+    //checking of all error titles
+    while (get_config_string(err_title_buf, CONFIG_END_OF_STRING_MARKER, config_buffer, config->errors_titles[i]) == 0)
     {
         memset(err_title_buf, '\0', CONFIG_MAX_STRING_SIZE);
+        i++;
+        if (i >= CONFIG_MAX_ERROR_TITLES)
+            break;
+
         sprintf(err_title_buf, CONFIG_LOG_ERR_TITLE, i + 1);
-        get_config_string(err_title_buf, CONFIG_END_OF_STRING_MARKER, config_buffer, config->errors_titles[i]);
     }
 
     return 0;
@@ -176,35 +181,36 @@ int open_log_file(client SPIFFSInterface ?i_spiffs, char reset_existing_file)
 
     //Trying to open existing LOG file
     file_descriptor = i_spiffs.open_file(Config.log_file_name[curr_log_file_no], strlen(Config.log_file_name[curr_log_file_no]), flags);
-    if ((file_descriptor < 0))
+    if (file_descriptor < 0)
     {
-        printstrln("Error opening file");
-    }
-    else
-    //File not found, creating of new file
-    if (file_descriptor > SPIFFS_MAX_FILE_DESCRIPTOR)
-    {
-            printstr("LOG file not found, creating of new file: ");
-            printstrln(Config.log_file_name[curr_log_file_no]);
-            file_descriptor = i_spiffs.open_file(Config.log_file_name[curr_log_file_no], strlen(Config.log_file_name[curr_log_file_no]), (SPIFFS_CREAT | SPIFFS_TRUNC | SPIFFS_RDWR));
-            if ((file_descriptor < 0)||(file_descriptor > SPIFFS_MAX_FILE_DESCRIPTOR))
-            {
-                  printstrln("Error opening file");
-                  return -1;
-            }
-            else
-            {
-                printstr("File created: ");
-                printintln(file_descriptor);
-            }
+           if (file_descriptor == SPIFFS_ERR_NOT_FOUND)
+           {
+                printstr("LOG file not found, creating of new file: ");
+                printstrln(Config.log_file_name[curr_log_file_no]);
+                file_descriptor = i_spiffs.open_file(Config.log_file_name[curr_log_file_no], strlen(Config.log_file_name[curr_log_file_no]), (SPIFFS_CREAT | SPIFFS_TRUNC | SPIFFS_RDWR));
+                if (file_descriptor < 0)
+                {
+                    printstrln("Error opening file");
+                    return -1;
+                 }
+                 else
+                 {
+                     printstr("File created: ");
+                     printintln(file_descriptor);
+                 }
+                 memset(log_buf, 0, sizeof(log_buf));
+                 printf(log_buf, "MOTOR CONTROL DATA LOG\n\nCompTorq TorqSet V_dc  I_b  I_c  Angle Hall QEI_idx AngleVel Pos Singlet Velocity SensTimeStmp SecPos SecSinglet SecVel SecSensTimeStmp Temp AI_a1 AI_a2 AI_a3 AI_a4\n\n");
 
-            safememset(log_buf, 0, sizeof(log_buf));
-            printf(log_buf, "MOTOR CONTROL DATA LOG\n\nCompTorq TorqSet V_dc  I_b  I_c  Angle Hall QEI_idx AngleVel Pos Singlet Velocity SensTimeStmp SecPos SecSinglet SecVel SecSensTimeStmp Temp AI_a1 AI_a2 AI_a3 AI_a4\n\n");
+                 res = i_spiffs.write(file_descriptor, log_buf, strlen(log_buf));
+                 i_spiffs.flush(file_descriptor);
 
-            res = i_spiffs.write(file_descriptor, log_buf, strlen(log_buf));
-            i_spiffs.flush(file_descriptor);
-
-            printintln(res);
+                 printintln(res);
+           }
+           else
+           {
+               printstrln("Error opening file");
+               return -1;
+           }
     }
     else
     {
@@ -283,7 +289,7 @@ void data_logging_save(client SPIFFSInterface ?i_spiffs, client interface Motion
 
     {ucd, dcd} = i_motion_control.read_control_data();
 
-    safememset(log_buf, 0, sizeof(log_buf));
+    memset(log_buf, 0, sizeof(log_buf));
     sprintf(log_buf, " %d, %5d, %5d, %5d, %5d, %5d, %5d, %5d, %5d, %5d, %5d, %5d, %5d, %5d, %5d, %5d, %5d, %5d, %5d, %5d, %5d, %5d\n",
     ucd.computed_torque,
     ucd.torque_set,
@@ -328,17 +334,44 @@ void data_logging_save(client SPIFFSInterface ?i_spiffs, client interface Motion
 }
 
 
+void error_logging_save(client SPIFFSInterface ?i_spiffs, client interface MotionControlInterface i_motion_control)
+{
+    int res;
+    char log_buf[768];
+    UpstreamControlData ucd;
+    DownstreamControlData dcd;
+
+    {ucd, dcd} = i_motion_control.read_control_data();
+
+    memset(log_buf, 0, sizeof(log_buf));
+    //sprintf(log_buf, " %d, %5d, %5d, %5d, %5d, %5d, %5d, %5d, %5d, %5d, %5d, %5d, %5d, %5d, %5d, %5d, %5d, %5d, %5d, %5d, %5d, %5d\n",
+
+    //ucd.error_status;
+    //ucd.angle_sensor_error;
+    //ucd.sensor_error;
+    //ucd.secondary_sensor_error;
+
+    res = i_spiffs.write(file_descriptor, log_buf, strlen(log_buf));
+    i_spiffs.flush(file_descriptor);
+
+    printint(res);
+    printstr(" ");
+    printintln(i_spiffs.get_file_size(file_descriptor));
+
+}
+
+
 void data_logging_service(
         interface DataLoggingInterface server ?i_logif[n_logif],
         client SPIFFSInterface ?i_spiffs,
         client interface MotionControlInterface i_motion_control,
         unsigned n_logif)
 {
-    timer t;
-    unsigned time = 0;
-    int whait_for_reply = 0;
-
-
+    timer timer_data_logging;
+    timer timer_error_logging;
+    unsigned time_data = 0;
+    unsigned time_error = 0;
+    unsigned start_time, end_time;
 
     if (isnull(i_spiffs)) {
             // error spiffs
@@ -363,7 +396,10 @@ void data_logging_service(
        return;
     }
     else
-        log_timer_active = 1;
+    {
+        log_data_timer_active = 1;
+        log_error_timer_active = 1;
+    }
 
     while (1) {
 
@@ -375,7 +411,7 @@ void data_logging_service(
                     DownstreamControlData dcd;
                     {ucd, dcd} = i_motion_control.read_control_data();
 
-                    safememset(command_buf, 0, sizeof(command_buf));
+                    memset(command_buf, 0, sizeof(command_buf));
                     sprintf(command_buf, "User command: Position: %d, Velocity %d, Torque: %d, Offset Torque: %d\n", dcd.position_cmd, dcd.velocity_cmd, dcd.torque_cmd, dcd.offset_torque);
                     res = i_spiffs.write(file_descriptor, command_buf, strlen(command_buf));
                     i_spiffs.flush(file_descriptor);
@@ -388,16 +424,33 @@ void data_logging_service(
 
                 break;
 
-            case t when timerafter(time + Config.data_timer_interval) :> void :
-                    if (log_timer_active)
-                    {
-                        if (check_log_file_size(i_spiffs, 1) != 0)
-                            log_timer_active = 0;
-                        data_logging_save(i_spiffs, i_motion_control);
-                    }
-                    t :> time;
+            case timer_data_logging when timerafter(time_data + Config.data_timer_interval) :> void :
+                if (log_data_timer_active)
+                {
+                     if (check_log_file_size(i_spiffs, 1) != 0)
+                     {
+                         log_data_timer_active = 0;
+                         log_error_timer_active = 0;
+                     }
+                     data_logging_save(i_spiffs, i_motion_control);
+                }
+                timer_data_logging :> time_data;
 
-                 break;
+                break;
+
+            case timer_error_logging when timerafter(time_error + Config.error_timer_interval) :> void :
+                if (log_error_timer_active)
+                {
+                    if (check_log_file_size(i_spiffs, 1) != 0)
+                    {
+                         log_data_timer_active = 0;
+                         log_error_timer_active = 0;
+                    }
+
+                }
+                timer_error_logging :> time_error;
+
+                break;
 
             default:
                 break;
