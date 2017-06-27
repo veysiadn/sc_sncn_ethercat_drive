@@ -11,7 +11,6 @@
 #include <qei_service.h>
 #include <motion_control_service.h>
 #include <profile_control.h>
-#include <co_interface.h>
 
 /* Define which type a given profiler configuration is
  * FIXME could be added into ProfilerConfig!

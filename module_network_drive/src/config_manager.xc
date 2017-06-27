@@ -5,6 +5,7 @@
  */
 
 #include <stdint.h>
+#include <canod.h>
 #include <dictionary_symbols.h>
 #include <state_modes.h>
 #include <position_feedback_service.h>
