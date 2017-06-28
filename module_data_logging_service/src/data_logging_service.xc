@@ -1,5 +1,6 @@
 
 #include <data_logging_service.h>
+#include <config_strings.h>
 #include <xs1.h>
 #include <print.h>
 #include <string.h>
@@ -11,6 +12,12 @@ unsigned char log_error_timer_active = 0;
 short file_descriptor;
 unsigned char curr_log_file_no = 0;
 DataLoggingConfig Config;
+int last_error_status = 0;
+SensorError  last_angle_sensor_error = SENSOR_NO_ERROR;
+SensorError  last_sensor_error = SENSOR_NO_ERROR;
+SensorError  secondary_last_sensor_error = SENSOR_NO_ERROR;
+MotionControlError last_motion_control_error = MOTION_CONTROL_NO_ERROR;
+
 
 
 int get_config_value(char title[], char end_marker[], char buffer[])
@@ -334,6 +341,8 @@ void data_logging_save(client SPIFFSInterface ?i_spiffs, client interface Motion
 }
 
 
+
+
 void error_logging_save(client SPIFFSInterface ?i_spiffs, client interface MotionControlInterface i_motion_control)
 {
     int res;
@@ -343,20 +352,35 @@ void error_logging_save(client SPIFFSInterface ?i_spiffs, client interface Motio
 
     {ucd, dcd} = i_motion_control.read_control_data();
 
-    memset(log_buf, 0, sizeof(log_buf));
-    //sprintf(log_buf, " %d, %5d, %5d, %5d, %5d, %5d, %5d, %5d, %5d, %5d, %5d, %5d, %5d, %5d, %5d, %5d, %5d, %5d, %5d, %5d, %5d, %5d\n",
+    if ((ucd.angle_sensor_error != 0) && (ucd.angle_sensor_error != last_angle_sensor_error))
+    {
+         memset(log_buf, 0, sizeof(log_buf));
+         sprintf(log_buf, " %d, %5d, %s", ucd.sensor_timestamp, ucd.angle_sensor_error, Config.errors_titles[ucd.angle_sensor_error]);
+         res = i_spiffs.write(file_descriptor, log_buf, strlen(log_buf));
+         i_spiffs.flush(file_descriptor);
 
-    //ucd.error_status;
-    //ucd.angle_sensor_error;
-    //ucd.sensor_error;
-    //ucd.secondary_sensor_error;
+         last_angle_sensor_error = ucd.angle_sensor_error;
+    }
 
-    res = i_spiffs.write(file_descriptor, log_buf, strlen(log_buf));
-    i_spiffs.flush(file_descriptor);
+    if ((ucd.sensor_error != 0) && (ucd.sensor_error != last_sensor_error))
+    {
+         memset(log_buf, 0, sizeof(log_buf));
+         sprintf(log_buf, " %d, %5d, %s", ucd.sensor_timestamp, ucd.sensor_error, Config.errors_titles[ucd.sensor_error]);
+         res = i_spiffs.write(file_descriptor, log_buf, strlen(log_buf));
+         i_spiffs.flush(file_descriptor);
 
-    printint(res);
-    printstr(" ");
-    printintln(i_spiffs.get_file_size(file_descriptor));
+         last_sensor_error = ucd.sensor_error;
+    }
+
+    if ((ucd.secondary_sensor_error != 0) && (ucd.secondary_sensor_error != last_sensor_error))
+    {
+         memset(log_buf, 0, sizeof(log_buf));
+         sprintf(log_buf, " %d, %5d, %s", ucd.secondary_sensor_timestamp, ucd.secondary_sensor_error, Config.errors_titles[ucd.secondary_sensor_error]);
+         res = i_spiffs.write(file_descriptor, log_buf, strlen(log_buf));
+         i_spiffs.flush(file_descriptor);
+
+         last_sensor_error = ucd.secondary_last_sensor_error;
+     }
 
 }
 
