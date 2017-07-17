@@ -1,28 +1,28 @@
 #index, subindex,      axis 1,      axis 2,      axis 3,      axis 4,      axis 5,      axis 6
 #offset
-0x2001,        0,        3200,         278,        2008,        1900,        1205,        1206 # COMMUTATION_ANGLE_OFFSET [0:4095]
-0x2A00,        0,          20,          20,          20,          80,          20,          20 # APPLIED_TUNING_TORQUE_PERCENT - (maximum) generated torque while finding offset value as a percentage of rated torque
+0x2001,        0,        3200,         278,        2008,        1900,           0,           0 # COMMUTATION_ANGLE_OFFSET [0:4095]
+0x2A00,        0,          20,          20,          20,          80,           0,           0 # APPLIED_TUNING_TORQUE_PERCENT - (maximum) generated torque while finding offset value as a percentage of rated torque
 
 #motor config
-0x6075,        0,        4800,        4800,        4800,        4800,        4800,        4800 # MOTOR_RATED_CURRENT - rated phase current [milli-Amp-RMS]
-0x6076,        0,         270,         270,         270,         270,         270,         270 # MOTOR_RATED_TORQUE - rated motor torque [milli-Nm] 
-0x2003,        1,          10,          10,          10,          10,          10,          10 # MOTOR_POLE_PAIRS - number of motor pole-pairs
-0x2003,        2,       60000,       60000,       60000,       60000,       60000,       60000 # MOTOR_TORQUE_CONSTANT - torque constant [micro-Nm/Amp-RMS]
-0x2003,        3,      552000,      552000,      552000,      552000,      552000,      552000 # MOTOR_PHASE_RESISTANCE - motor phase resistance [micro-ohm]
-0x2003,        4,         720,         720,         720,         720,         720,         720 # MOTOR_PHASE_INDUCTANCE - motor phase inductance [micro-Henry]
+0x6075,        0,        7000,        7000,        4800,        7000,           0,           0 # MOTOR_RATED_CURRENT - rated phase current [milli-Amp-RMS]
+0x6076,        0,        1250,        1250,         270,        1250,           0,           0 # MOTOR_RATED_TORQUE - rated motor torque [milli-Nm] 
+0x2003,        1,          10,          10,          10,          10,           0,           0 # MOTOR_POLE_PAIRS - number of motor pole-pairs
+0x2003,        2,      180000,      180000,       98000,      180000,           0,           0 # MOTOR_TORQUE_CONSTANT - torque constant [micro-Nm/Amp-RMS]
+0x2003,        3,      655000,      655000,      552000,      655000,           0,           0 # MOTOR_PHASE_RESISTANCE - motor phase resistance [micro-ohm]
+0x2003,        4,        1350,        1350,         772,        1350,           0,           0 # MOTOR_PHASE_INDUCTANCE - motor phase inductance [micro-Henry]
 0x2003,        5,           0,           1,           0,           0,           0,           0 # MOTOR_PHASES_CONFIGURATION (0 normal, 1 inverted)
 
 #brake config
-0x2004,        1,       13000,       13000,       13000,       27000,       13000,       13000 # PULL_BRAKE_VOLTAGE - [milli-Volts]
-0x2004,        2,        7000,        7000,        7000,       10000,        7000,        7000 # HOLD_BRAKE_VOLTAGE - [milli-Volts]
-0x2004,        3,         500,         500,         500,         500,         500,         500 # PULL_BRAKE_TIME - time period when the controller tries to release (pull) the brake [milli seconds]
+0x2004,        1,       13000,       13000,       13000,       27000,           0,           0 # PULL_BRAKE_VOLTAGE - [milli-Volts]
+0x2004,        2,        7000,        7000,        7000,       12000,           0,           0 # HOLD_BRAKE_VOLTAGE - [milli-Volts]
+0x2004,        3,         500,         500,         500,         500,           0,           0 # PULL_BRAKE_TIME - time period when the controller tries to release (pull) the brake [milli seconds]
 0x2004,        4,           0,           0,           0,           0,           0,           0 # BRAKE_RELEASE_STRATEGY - 0 disabled, 1 normal, 2-100 shaking
 0x2004,        5,           0,           0,           0,           0,           0,           0 # BRAKE_RELEASE_DELAY -  delay in [milli seconds] between the brake blocking and the stop of the control
-0x2004,        6,          48,          48,          48,          48,          24,          24 # DC_BUS_VOLTAGE - this parameter is a basis for brake voltage calculation 
+0x2004,        6,          48,          48,          48,          48,           0,           0 # DC_BUS_VOLTAGE - this parameter is a basis for brake voltage calculation 
 
 #limits
-0x6072,        0,        1000,        1000,        1000,        1000,        1000,        1000 # MAX_TORQUE, in 1/1000 of rated torque
-0x6080,        0,        5000,        5000,        5000,        5000,        5000,        5000 # MAX_MOTOR_SPEED - maximum motor speed [rpm]
+0x6072,        0,           4,           4,           1,           4,        1000,        1000 # MAX_TORQUE, in 1/1000 of rated torque
+0x6080,        0,          35,          35,          90,          35,        5000,        5000 # MAX_MOTOR_SPEED - maximum motor speed [rpm]
 0x6085,        0,        5000,        5000,        5000,        5000,        5000,        5000 # QUICK_STOP_DECELERATION - [rpm/sec]
 0x607D,        1, -0x7fffffff, -0x7fffffff, -0x7fffffff, -0x7fffffff, -0x7fffffff, -0x7fffffff # MIN_SOFTWARE_POSITION_RANGE_LIMIT - [encoder increments (ticks)]
 0x607D,        2,  0x7fffffff,  0x7fffffff,  0x7fffffff,  0x7fffffff,  0x7fffffff,  0x7fffffff # MAX_SOFTWARE_POSITION_RANGE_LIMIT - [encoder increments (ticks)]
@@ -37,10 +37,10 @@
 #torque position velocity control
 #main parameters
 0x607E,        0,        0x00,        0x00,        0x00,        0x00,        0x00,        0x00 # POLARITY - (bit 0x80 invert direction of motion in CSP mode,  bit 0x40 invert direction of motion in CSV mode)
-0x2012,        1,       54000,       15000,        5000,       20000,       16000,       16000 # POSITION_Kp - [1/1e6]
-0x2012,        2,         900,         450,         150,        1000,         280,         280 # POSITION_Ki - [1/1e6]
-0x2012,        3,      250000,       60000,       20000,       80000,       41000,       41000 # POSITION_Kd - [1/1e6]
-0x2012,        4,        1000,        1000,        1000,        1000,        1000,        1000 # POSITION_INTEGRAL_LIMIT - integral limit [1/1]
+0x2012,        1,       54000,       15000,        5000,       20000,           0,           0 # POSITION_Kp - [1/1e6]
+0x2012,        2,         900,         450,         150,        1000,           0,           0 # POSITION_Ki - [1/1e6]
+0x2012,        3,      250000,       60000,       20000,       80000,           0,           0 # POSITION_Kd - [1/1e6]
+0x2012,        4,        1000,        1000,        1000,        1000,           0,           0 # POSITION_INTEGRAL_LIMIT - integral limit [1/1]
 0x2011,        1,           0,           0,           0,           0,           0,           0 # VELOCITY_Kp
 0x2011,        2,           0,           0,           0,           0,           0,           0 # VELOCITY_Ki
 0x2011,        3,           0,           0,           0,           0,           0,           0 # VELOCITY_Kd
